@@ -2,7 +2,7 @@
 
 The public website for Vault Format, a fixed-format Yu-Gi-Oh! with premade decks. Built with Next.js (App Router) and Material UI, and published as a static site on GitHub Pages.
 
-The site holds **no content of its own**. Decks, card images and texts, covers, the `.json`/`.md` files and the EDOPro pack live on a **file server**: the private admin repo (`dmf_admin`), which also has the admin pages for adding and editing all of it. Every page loads its content from there in the browser, on every visit, so content changes show up right away without rebuilding this site.
+The site holds **no content of its own**. Decks, card images and texts, covers and the `.json`/`.md` files live on a **file server**: the private admin repo (`dmf_admin`), which also has the admin pages for adding and editing all of it. Every page loads its content from there in the browser, on every visit, so content changes show up right away without rebuilding this site.
 
 ## Run locally
 
@@ -37,11 +37,10 @@ npm run preview    # serve out/ on http://localhost:4173
 | Deck lists | `decks/<deck_id>.ydk` |
 | Card images and texts | `cards/<card_id>.jpg`, `card_texts/<card_id>.txt` |
 | Deck covers | `covers/<card_id>.jpg`, `covers/crops/<deck>--<card>-<x>-<y>-<size>.jpg` |
-| EDOPro pack | `downloads/vault_format_edopro.json` + the zip it names |
 
 The file server must allow other sites to read these files (CORS); `dmf_admin` does. Cards with ids `900000000`-`900009999` are **Vault Format errata**; the Errata page lists every one used in a deck.
 
-Pages with nothing to show yet say so instead of showing an empty page: Decks and Errata with no decks, Errata with no errata cards, Download with no decks or no archive.
+Pages with nothing to show yet say so instead of showing an empty page: Decks and Errata with no decks, Errata with no errata cards.
 
 ## Content formats
 
@@ -67,7 +66,7 @@ Pages with nothing to show yet say so instead of showing an empty page: Decks an
 
 | Where | What |
 | --- | --- |
-| `src/app/` | the routes: `/`, `/decks`, `/deck`, `/errata`, `/rulings`, `/download`, `/server-error` (the 500 page), 404 |
+| `src/app/` | the routes: `/`, `/decks`, `/deck`, `/errata`, `/rulings`, `/server-error` (the 500 page), 404 |
 | `src/components/pages/` | each page's loader (fetches from the file server, then renders the view) |
 | `src/components/` | views and shared pieces (`LoadingScreen`, `Decor`, `Markdown`, cards, decks) |
 | `src/lib/fileServer.ts` | all file server access |

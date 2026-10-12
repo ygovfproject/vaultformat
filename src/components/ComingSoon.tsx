@@ -12,7 +12,7 @@ const bob = keyframes`
   50% { transform: translate(6px, -10px) rotate(3deg); }
 `;
 
-/** "Not here yet" panel, shown on Decks and Download while there are no decks. */
+/** "Not here yet" panel, shown on Decks while there are no decks. */
 export default function ComingSoon({ title, text }: { title: string; text: string }) {
   const back = withBase('/back.jpg');
   const card = {

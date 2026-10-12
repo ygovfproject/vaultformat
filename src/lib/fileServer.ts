@@ -1,5 +1,5 @@
 /**
- * Content (decks, card images and texts, covers, .json/.md files, the EDOPro pack) lives on a
+ * Content (decks, card images and texts, covers, .json/.md files) lives on a
  * separate file server: FILE_SERVER in .env (e.g. http://localhost:3002/ locally, or its hosted
  * URL). The site is a static shell: every page loads its content from the file server in the
  * browser, on every visit, so content changes show up without rebuilding the site.

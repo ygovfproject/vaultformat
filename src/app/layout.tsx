@@ -16,7 +16,7 @@ const ui = Montserrat({ subsets: ['latin'], weight: ['500', '600', '700'], varia
 export const metadata: Metadata = {
   title: { default: 'Yu-Gi-Oh! Vault Format', template: '%s · Yu-Gi-Oh! Vault Format' },
   description:
-    'Yu-Gi-Oh! Vault Format (Yugioh Vault Format): a fixed Yu-Gi-Oh! format with premade, balanced decks, Vault Format card errata and an EDOPro pack.',
+    'Yu-Gi-Oh! Vault Format (Yugioh Vault Format): a fixed Yu-Gi-Oh! format with premade, balanced decks and Vault Format card errata.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

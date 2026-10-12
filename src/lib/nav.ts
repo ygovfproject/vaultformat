@@ -3,5 +3,4 @@ export const NAV_ITEMS = [
   { label: 'Decks', href: '/decks' },
   { label: 'Errata', href: '/errata' },
   { label: 'Rulings', href: '/rulings' },
-  { label: 'Download', href: '/download' },
 ] as const;
