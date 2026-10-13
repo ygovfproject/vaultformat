@@ -71,7 +71,24 @@ export function cardImageUrl(id: string): string {
   return fileUrl(`cards/${id}.jpg`);
 }
 
-/** Card text (card_texts/<id>.txt), '' if missing. */
+/** Card text (card_texts/<id>.txt), '' if missing. Errata texts still have their "~Vault Format erratum~" line. */
 export async function cardText(id: string): Promise<string> {
   return ((await fetchText(`card_texts/${id}.txt`)) ?? '').trim();
 }
+
+/** Custom card ids: 900000000–900009999. */
+export const isCustomCard = (id: string) => /^90000\d{4}$/.test(id);
+
+/** The "~Vault Format erratum~" line in a card text (also the old "~DMF erratum~"). */
+const ERRATUM_LINE = /^[ \t]*~[ \t]*(?:dmf|vault(?:[ \t]+format)?)[ \t]+erratum[ \t]*~[ \t]*$/im;
+
+/** A card is a Vault Format erratum only if it's a custom card and its text has the erratum line. */
+export const isErratum = (id: string, text: string | undefined) => isCustomCard(id) && !!text && ERRATUM_LINE.test(text);
+
+/** Card text without the erratum line (the site shows the erratum note itself). */
+export const withoutErratumLine = (text: string) =>
+  text
+    .split(/\r?\n/)
+    .filter((line) => !new RegExp(ERRATUM_LINE.source, 'i').test(line))
+    .join('\n')
+    .trim();

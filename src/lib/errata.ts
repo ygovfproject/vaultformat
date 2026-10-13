@@ -1,19 +1,17 @@
 import { getContentText, readDecksJson } from './content';
 import { parseYdk } from './decklist';
-import { cardImageUrl, fetchText } from './fileServer';
-
-const ERRATA_ID = /^90000\d{4}$/;
+import { cardImageUrl, cardText, fetchText, isCustomCard, isErratum } from './fileServer';
 
 export type ErrataData = {
   /** Intro text from content/errata.md ('' if missing) */
   intro: string;
-  /** Erratum card ids (90000nnnn) used in any deck, in deck-list order */
+  /** Erratum card ids used in any deck (custom cards whose text has the "~Vault Format erratum~" line), in deck-list order */
   cards: string[];
   images: Record<string, string | null>;
 };
 
 /**
- * All erratum card ids that appear in the deck lists (decks/<id>.ydk on the file server, for every
+ * All erratum card ids (custom cards, 90000nnnn, whose text has the "~Vault Format erratum~" line) that appear in the deck lists (decks/<id>.ydk on the file server, for every
  * deck in decks.json), in the order they first appear: decks by id, cards in deck-list order.
  */
 async function errataFromDecks(): Promise<string[]> {
@@ -23,9 +21,11 @@ async function errataFromDecks(): Promise<string[]> {
   const cards = new Set<string>(); // a Set keeps insertion order
   for (const ydk of ydks) {
     const { main, extra, side } = parseYdk(ydk);
-    for (const id of [...main, ...extra, ...side]) if (ERRATA_ID.test(id)) cards.add(id);
+    for (const id of [...main, ...extra, ...side]) if (isCustomCard(id)) cards.add(id);
   }
-  return [...cards];
+  const custom = [...cards];
+  const texts = await Promise.all(custom.map((id) => cardText(id).catch(() => '')));
+  return custom.filter((id, i) => isErratum(id, texts[i]));
 }
 
 /** Errata from the deck lists (card ids + image URLs) and the intro text. Card texts load later, on the page. */

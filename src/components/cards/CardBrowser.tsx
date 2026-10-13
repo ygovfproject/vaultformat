@@ -10,7 +10,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { dmf, fonts } from '@/theme';
 import { SlashLabel } from '../Decor';
-import { cardText } from '@/lib/fileServer';
+import { cardText, isErratum, withoutErratumLine } from '@/lib/fileServer';
 import ScrollArea from './ScrollArea';
 
 /**
@@ -58,8 +58,11 @@ function usePanelHeight(enabled: boolean) {
   return { ref, height };
 }
 
-/** Cards with ids 900000000–900009999 are Vault Format errata (modified versions of official cards). */
-export const isErrata = (card: string) => /^90000\d{4}$/.test(card);
+/**
+ * Vault Format errata (modified versions of official cards): custom cards (900000000–900009999)
+ * whose text has the "~Vault Format erratum~" line. Known once the card's text has loaded.
+ */
+const isErrata = (card: string, texts: Texts) => isErratum(card, texts[card]);
 
 /** Small "E" (erratum) tag shown on erratum cards in the grid. */
 function ErrataTag() {
@@ -219,11 +222,11 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
   const text = texts[card];
   const textBody = (
     <>
-      {isErrata(card) && <ErrataBanner />}
+      {isErrata(card, texts) && <ErrataBanner />}
       {text === undefined ? (
         <Typography sx={{ fontSize: '0.95rem', color: dmf.textMuted, fontStyle: 'italic' }}>Loading card text…</Typography>
       ) : text ? (
-        <CardText text={text} />
+        <CardText text={withoutErratumLine(text)} />
       ) : (
         <Typography sx={{ fontSize: '0.95rem', color: dmf.textMuted, fontStyle: 'italic' }}>No card text.</Typography>
       )}
@@ -286,6 +289,7 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
 function Section({
   section,
   images,
+  texts,
   selected,
   onSelect,
   errataTags,
@@ -294,6 +298,7 @@ function Section({
   sectionRef?: React.Ref<HTMLElement>;
   section: CardSection;
   images: Lookup['images'];
+  texts: Texts;
   selected: Selected | null;
   onSelect: (s: Selected) => void;
   errataTags: boolean;
@@ -325,7 +330,7 @@ function Section({
                 component="button"
                 type="button"
                 onClick={() => onSelect({ section: key, index, card })}
-                aria-label={`Show card ${card}${isErrata(card) ? ' (Vault Format erratum)' : ''}`}
+                aria-label={`Show card ${card}${isErrata(card, texts) ? ' (Vault Format erratum)' : ''}`}
                 aria-pressed={active}
                 sx={{
                   p: 0,
@@ -343,7 +348,7 @@ function Section({
                 }}
               >
                 <CardImage src={images[card] ?? null} alt={`Card ${card}`} />
-                {errataTags && isErrata(card) && <ErrataTag />}
+                {errataTags && isErrata(card, texts) && <ErrataTag />}
               </Box>
             );
           })}
@@ -392,7 +397,7 @@ export default function CardBrowser({
         {/* The last card box stretches so both columns end at the same line. */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, '& > section:last-of-type': { flexGrow: 1 } }}>
           {sections.map((s, i) => (
-            <Section key={s.key} sectionRef={i === 0 ? panel.ref : undefined} section={s} images={images} selected={selected} onSelect={select} errataTags={errataTags} />
+            <Section key={s.key} sectionRef={i === 0 ? panel.ref : undefined} section={s} images={images} texts={texts} selected={selected} onSelect={select} errataTags={errataTags} />
           ))}
         </Box>
       </Box>
