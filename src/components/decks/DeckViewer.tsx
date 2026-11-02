@@ -28,7 +28,7 @@ export default function DeckViewer({ deck }: { deck: DeckList }) {
             mb: 3,
             fontFamily: fonts.ui,
             fontWeight: 700,
-            fontSize: '0.8rem',
+            fontSize: 'max(13px, 0.8rem)',
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
             color: dmf.textMuted,

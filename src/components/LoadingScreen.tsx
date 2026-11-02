@@ -1,10 +1,10 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Box from '@mui/material/Box';
 import { keyframes } from '@emotion/react';
-import { dmf } from '@/theme';
+import { dmf, easeOut } from '@/theme';
 import { BASE_PATH } from '@/lib/basePath';
 import { patternBg } from './Decor';
 
@@ -12,14 +12,16 @@ import { patternBg } from './Decor';
  * Loading screen with fade transitions. It covers the page but not the header.
  *
  * - First visit: the screen is up from the start, and fades out once the page's content is in.
- * - Clicking a link inside the site: the screen fades in over the current page, the new page loads
- *   behind it, and the screen fades out when that page is ready.
+ * - Clicking a link inside the site: the page changes right away. The screen only fades in if the
+ *   new page takes longer than SHOW_AFTER_MS to be ready, so fast page changes never show it.
  *
  * A page counts as "loading" while it renders <PageLoading /> (see useLoadingScreen below); pages
  * that don't load anything are ready right away.
  */
 
-const FADE_MS = 280;
+const FADE_MS = 200;
+/** Page changes faster than this don't show the screen at all. */
+const SHOW_AFTER_MS = 150;
 /** Keep the screen up at least this long once shown, so it never just flickers. */
 const MIN_SHOWN_MS = 300;
 
@@ -39,21 +41,18 @@ const shrink = keyframes`
   50% { transform: rotate(45deg) scale(0.45); }
 `;
 
-/** Same-site link we should animate to, or null (external, new tab, download, same page, #anchor...). */
-function internalTarget(e: MouseEvent): string | null {
-  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return null;
+/** A click on a link to another page of this site (not external, new tab, download, same page, #anchor...). */
+function isPageChange(e: MouseEvent): boolean {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
   const a = (e.target as Element | null)?.closest?.('a');
-  if (!a || !a.href || a.hasAttribute('download') || (a.target && a.target !== '_self')) return null;
+  if (!a || !a.href || a.hasAttribute('download') || (a.target && a.target !== '_self')) return false;
   const url = new URL(a.href, window.location.href);
-  if (url.origin !== window.location.origin) return null;
-  if (url.pathname === window.location.pathname && url.search === window.location.search) return null; // same page / #anchor
-  if (BASE_PATH && !url.pathname.startsWith(BASE_PATH)) return null;
-  const path = url.pathname.slice(BASE_PATH.length) || '/';
-  return path + url.search + url.hash;
+  if (url.origin !== window.location.origin) return false;
+  if (url.pathname === window.location.pathname && url.search === window.location.search) return false; // same page / #anchor
+  return !BASE_PATH || url.pathname.startsWith(BASE_PATH);
 }
 
 export default function LoadingScreen({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const pathname = usePathname();
 
   const [loaders, setLoaders] = useState(0); // pages currently loading
@@ -81,35 +80,32 @@ export default function LoadingScreen({ children }: { children: React.ReactNode 
     return () => clearTimeout(t);
   }, [navigating]);
 
-  // Show while navigating or loading; hide (after the minimum time) when both are done
+  // Show once navigating or loading has gone on for SHOW_AFTER_MS; hide (after the minimum time)
+  // when both are done
   const busy = navigating || loaders > 0;
   useEffect(() => {
     if (busy) {
-      if (!visible) {
+      if (visible) return;
+      const t = setTimeout(() => {
         shownAt.current = Date.now();
         setVisible(true);
-      }
-      return;
+      }, SHOW_AFTER_MS);
+      return () => clearTimeout(t);
     }
     const wait = Math.max(0, MIN_SHOWN_MS - (Date.now() - shownAt.current));
     const t = setTimeout(() => setVisible(false), wait);
     return () => clearTimeout(t);
   }, [busy, visible]);
 
-  // Internal link clicks: fade the screen in first, then change page
+  // Internal link clicks: next/link changes the page right away; this only marks the page change
+  // as started, so a slow one gets the screen
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
-      const to = internalTarget(e);
-      if (!to) return;
-      e.preventDefault();
-      shownAt.current = Date.now();
-      setNavigating(true);
-      setVisible(true);
-      setTimeout(() => router.push(to), FADE_MS);
+      if (isPageChange(e)) setNavigating(true);
     };
-    document.addEventListener('click', onClick, true); // capture: before next/link handles it
+    document.addEventListener('click', onClick, true);
     return () => document.removeEventListener('click', onClick, true);
-  }, [router]);
+  }, []);
 
   return (
     <LoadingCtx.Provider value={{ register }}>
@@ -134,7 +130,7 @@ export default function LoadingScreen({ children }: { children: React.ReactNode 
           opacity: visible ? 1 : 0,
           visibility: visible ? 'visible' : 'hidden',
           pointerEvents: visible ? 'auto' : 'none',
-          transition: `opacity ${FADE_MS}ms ease, visibility 0s linear ${visible ? 0 : FADE_MS}ms`,
+          transition: `opacity ${FADE_MS}ms ${easeOut}, visibility 0s linear ${visible ? 0 : FADE_MS}ms`,
         }}
       >
         {/* The header logo's diamond, scaled up (same proportions): the outline turns, the core shrinks meanwhile */}

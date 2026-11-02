@@ -21,7 +21,7 @@ npm run preview    # serve out/ on http://localhost:4173
 
 ## How pages load
 
-- **Loading screen:** on the first visit, and when moving between pages inside the site, a loading screen fades in (the header stays visible), the page loads its content behind it, and the screen fades out. It stays up at least 0.3 s, so it never just flickers.
+- **Loading screen:** on the first visit a loading screen covers the page (the header stays visible) until its content is in. When moving between pages inside the site the page changes right away, and the screen only fades in if the new page takes longer than 0.15 s to load. Once shown it stays up at least 0.3 s, so it never just flickers.
 - **What a page waits for:** only what it needs to show itself.
   - Main page: `philosophy.md`. The hero cards start face-down and flip up once the card list and their images are in; with no decks there are no cards. The update note appears when it's loaded.
   - Deck page and Errata: the deck lists. Card images load as they appear; card texts load in the background (a card opened early says "Loading card text…").

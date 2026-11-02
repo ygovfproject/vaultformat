@@ -5,7 +5,7 @@ import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { keyframes } from "@emotion/react";
-import { dmf, fonts } from "@/theme";
+import { dmf, easeOut, fonts } from "@/theme";
 import { GradientTitle, NotchButton, PixelEdge, SlashLabel } from "./Decor";
 import Markdown from "./Markdown";
 import { FlipFan } from "./cards/CardAnimations";
@@ -69,7 +69,7 @@ export default function Hero({
           direction="row"
           sx={{ alignItems: "center", justifyContent: "space-between", gap: 6 }}
         >
-          <Box sx={{ maxWidth: 680, animation: `${rise} 700ms ease both` }}>
+          <Box sx={{ maxWidth: 680, animation: `${rise} 500ms ${easeOut} both` }}>
             <SlashLabel>A fixed Yu-Gi-Oh! format</SlashLabel>
             <GradientTitle
               variant="h1"

@@ -9,7 +9,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import SearchIcon from '@mui/icons-material/Search';
 import { keyframes } from '@emotion/react';
-import { dmf, fonts } from '@/theme';
+import { canHover, dmf, easeOut, fonts } from '@/theme';
 import type { Deck } from '@/lib/content';
 
 type Sort = 'newest' | 'az';
@@ -60,16 +60,21 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
         clipPath: CLIP,
         background: 'linear-gradient(160deg, rgba(56,200,255,0.55), rgba(56,200,255,0.1) 45%, rgba(56,200,255,0.4))',
         transform: 'translateY(0)',
-        transition: 'transform 250ms ease, background 250ms ease',
+        transition: `transform 250ms ${easeOut}, background 250ms ${easeOut}`,
         willChange: 'transform',
-        '&:hover': {
-          transform: 'translateY(-6px)',
-          background: `linear-gradient(160deg, ${dmf.orange}, rgba(255,138,61,0.25) 45%, ${dmf.ice})`,
+        [canHover]: {
+          '&:hover': {
+            transform: 'translateY(-6px)',
+            background: `linear-gradient(160deg, ${dmf.orange}, rgba(255,138,61,0.25) 45%, ${dmf.ice})`,
+          },
+          '&:hover .deck-art': { transform: 'scale(1.07)' },
+          '&:hover .deck-shade': { opacity: 0.75 },
+          '&:hover .deck-sheen': { animation: `${sweep} 1100ms ease forwards` },
+          '&:hover .deck-title': { color: dmf.orange },
+          '&:active': { transform: 'translateY(-6px) scale(0.98)' },
         },
-        '&:hover .deck-art': { transform: 'scale(1.07)' },
-        '&:hover .deck-shade': { opacity: 0.75 },
-        '&:hover .deck-sheen': { animation: `${sweep} 1100ms ease forwards` },
-        '&:hover .deck-title': { color: dmf.orange },
+        // Pressed (touch screens; the hover version keeps the lift)
+        '&:active': { transform: 'scale(0.98)' },
       }}
     >
       <Box sx={{ position: 'relative', aspectRatio: '4 / 5', overflow: 'hidden', clipPath: CLIP, bgcolor: dmf.bgDeep }}>
@@ -91,7 +96,7 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
               objectFit: 'cover',
               objectPosition: 'center 30%',
               transform: 'scale(1)',
-              transition: 'transform 500ms ease',
+              transition: `transform 500ms ${easeOut}`,
               // Keep the image on its own GPU layer all the time, so it doesn't snap
               // by a sub-pixel when the zoom-out animation ends.
               willChange: 'transform',
@@ -142,7 +147,7 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
               backdropFilter: 'blur(4px)',
               fontFamily: fonts.display,
               fontWeight: 700,
-              fontSize: '0.8rem',
+              fontSize: 'max(13px, 0.8rem)',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
               color: dmf.text,
@@ -229,6 +234,7 @@ export default function DeckGrid({ decks }: { decks: Deck[] }) {
             '& .MuiToggleButton-root': {
               px: 2,
               fontFamily: fonts.ui,
+              fontSize: 'max(13px, 0.8125rem)',
               fontWeight: 700,
               letterSpacing: '0.08em',
               color: dmf.textMuted,

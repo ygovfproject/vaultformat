@@ -32,7 +32,7 @@ export default function Footer() {
                 href={item.href}
                 sx={{
                   fontFamily: fonts.ui,
-                  fontSize: '0.8rem',
+                  fontSize: 'max(13px, 0.8rem)',
                   fontWeight: 600,
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase',

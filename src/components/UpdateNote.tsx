@@ -5,7 +5,7 @@ import NextLink from 'next/link';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { dmf, fonts } from '@/theme';
+import { canHover, dmf, fonts } from '@/theme';
 import type { UpdateNews } from '@/lib/content';
 
 /**
@@ -56,10 +56,12 @@ export default function UpdateNote({ news }: { news: UpdateNews }) {
             color: dmf.text,
             textDecoration: 'none',
             fontFamily: fonts.ui,
-            fontSize: '0.875rem',
+            fontSize: 'max(13px, 0.875rem)',
             fontWeight: 600,
-            '&:hover .name': { color: dmf.orange },
-            '&:hover .arrow': { transform: 'translateX(3px)' },
+            [canHover]: {
+              '&:hover .name': { color: dmf.orange },
+              '&:hover .arrow': { transform: 'translateX(3px)' },
+            },
           }}
         >
           {upcoming ? (

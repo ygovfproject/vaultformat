@@ -8,8 +8,7 @@ import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { dmf, fonts } from '@/theme';
-import { SlashLabel } from '../Decor';
+import { canHover, dmf, easeOut, fonts } from '@/theme';
 import { cardText, isErratum, withoutErratumLine } from '@/lib/fileServer';
 import ScrollArea from './ScrollArea';
 
@@ -26,12 +25,18 @@ type Selected = { section: string; index: number; card: string };
 const CARD_RATIO = '59 / 86';
 const CARD_RADIUS = '3.5% / 2.4%';
 
-/** Rows of cards the info panel is as tall as. */
+/** The info panel is as tall as a 40-card Main Deck box: PANEL_ROWS rows of PANEL_COLUMNS cards. */
 const PANEL_ROWS = 5;
+const PANEL_COLUMNS = 8;
+/** Where the info panel sticks while scrolling: just below the header. */
+const PANEL_TOP = 96;
+/** Card lists this short get bigger cards (6 per row instead of 8), e.g. the errata page. */
+const FEW_CARDS = 24;
 
 /**
- * Height of the first card box if it held exactly PANEL_ROWS rows: its header, the rows and
- * the gaps between them, and its padding. Follows the card size as the window resizes.
+ * Height of the info panel: the first card box's height if it held a 40-card Main Deck (its
+ * header, PANEL_ROWS rows of PANEL_COLUMNS cards and the gaps between them, and its padding). The
+ * same on every page, whatever the deck size or cards per row. Follows the window size.
  */
 function usePanelHeight(enabled: boolean) {
   const ref = useRef<HTMLElement | null>(null);
@@ -41,13 +46,16 @@ function usePanelHeight(enabled: boolean) {
     if (!enabled || !section) return;
     const measure = () => {
       const grid = section.querySelector<HTMLElement>('[data-card-grid]');
-      const card = grid?.firstElementChild as HTMLElement | null;
-      if (!grid || !card) return;
+      if (!grid) return;
       const cs = getComputedStyle(section);
-      const rowGap = parseFloat(getComputedStyle(grid).rowGap) || 0;
+      const gs = getComputedStyle(grid);
+      const rowGap = parseFloat(gs.rowGap) || 0;
+      const columnGap = parseFloat(gs.columnGap) || 0;
       const top = grid.getBoundingClientRect().top - section.getBoundingClientRect().top; // border + padding + header
       const bottom = parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth);
-      const cardH = card.getBoundingClientRect().height;
+      // A card's height at PANEL_COLUMNS per row (cards are 59 × 86)
+      const cardW = (grid.clientWidth - (PANEL_COLUMNS - 1) * columnGap) / PANEL_COLUMNS;
+      const cardH = (cardW * 86) / 59;
       setHeight(Math.round(top + PANEL_ROWS * cardH + (PANEL_ROWS - 1) * rowGap + bottom));
     };
     measure();
@@ -77,7 +85,7 @@ function ErrataTag() {
         px: 0.5,
         fontFamily: fonts.display,
         fontWeight: 700,
-        fontSize: { xs: '0.5rem', md: '0.6rem' },
+        fontSize: 12,
         lineHeight: 1.5,
         letterSpacing: '0.08em',
         color: dmf.ink,
@@ -109,7 +117,7 @@ function CardText({ text }: { text: string }) {
       {parts.map((lines, i) => (
         <Box key={i}>
           {i > 0 && <Box role="separator" sx={{ my: 1.5, height: '1px', background: `linear-gradient(90deg, ${dmf.ice}99, ${dmf.ice}22)` }} />}
-          <Typography sx={{ whiteSpace: 'pre-line', fontSize: '0.95rem', lineHeight: 1.65, color: dmf.text }}>{lines.join('\n').trim()}</Typography>
+          <Typography sx={{ whiteSpace: 'pre-line', fontSize: 'max(15px, 0.95rem)', lineHeight: 1.65, color: dmf.text }}>{lines.join('\n').trim()}</Typography>
         </Box>
       ))}
     </>
@@ -128,14 +136,8 @@ function ErrataBanner() {
         bgcolor: 'rgba(255,138,61,0.1)',
       }}
     >
-      <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: dmf.orange, fontSize: '0.9rem' }}>
-        Vault Format erratum{' '}
-        <Box component="span" sx={{ color: dmf.ice }}>
-          {'//'}
-        </Box>
-      </Typography>
-      <Typography sx={{ fontSize: '0.85rem', color: dmf.textMuted, mt: 0.25 }}>
-        Modified for Vault Format. This is not the official version of the card.
+      <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: dmf.orange, fontSize: 'max(13px, 0.9rem)' }}>
+        Vault Format erratum
       </Typography>
     </Box>
   );
@@ -224,11 +226,11 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
     <>
       {isErrata(card, texts) && <ErrataBanner />}
       {text === undefined ? (
-        <Typography sx={{ fontSize: '0.95rem', color: dmf.textMuted, fontStyle: 'italic' }}>Loading card text…</Typography>
+        <Typography sx={{ fontSize: 'max(15px, 0.95rem)', color: dmf.textMuted, fontStyle: 'italic' }}>Loading card text…</Typography>
       ) : text ? (
         <CardText text={withoutErratumLine(text)} />
       ) : (
-        <Typography sx={{ fontSize: '0.95rem', color: dmf.textMuted, fontStyle: 'italic' }}>No card text.</Typography>
+        <Typography sx={{ fontSize: 'max(15px, 0.95rem)', color: dmf.textMuted, fontStyle: 'italic' }}>No card text.</Typography>
       )}
     </>
   );
@@ -257,20 +259,16 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
           bgcolor: 'rgba(6,14,28,0.6)',
         }}
       >
-        <Box sx={{ px: 2.5, pt: 2.5, flexShrink: 0, '& p': { mb: 1.5 } }}>
-          <SlashLabel>Card text</SlashLabel>
-        </Box>
         {/* key={card}: a new card gets a fresh text box, so its scroll starts at the top */}
         {dragScroll ? (
-          <ScrollArea key={card} sx={{ flex: 1, pl: 2.5, pr: 0.5, pb: 1 }}>
+          <ScrollArea key={card} sx={{ flex: 1, pl: 2.5, pr: 0.5, pt: 2.5, pb: 1 }}>
             <Box sx={{ pb: 1.5 }}>{textBody}</Box>
           </ScrollArea>
         ) : (
           <Box
             key={card}
             sx={{
-              px: 2.5,
-              pb: 2.5,
+              p: 2.5,
               flex: 1,
               minHeight: 0,
               overflowY: 'auto',
@@ -293,6 +291,7 @@ function Section({
   selected,
   onSelect,
   errataTags,
+  few,
   sectionRef,
 }: {
   sectionRef?: React.Ref<HTMLElement>;
@@ -302,6 +301,8 @@ function Section({
   selected: Selected | null;
   onSelect: (s: Selected) => void;
   errataTags: boolean;
+  /** Short card list: bigger cards */
+  few: boolean;
 }) {
   const { key, label, cards } = section;
   return (
@@ -319,9 +320,9 @@ function Section({
       </Box>
 
       {cards.length === 0 ? (
-        <Typography sx={{ color: dmf.textMuted, fontStyle: 'italic', fontSize: '0.9rem' }}>Empty</Typography>
+        <Typography sx={{ color: dmf.textMuted, fontStyle: 'italic', fontSize: 'max(13px, 0.9rem)' }}>Empty</Typography>
       ) : (
-        <Box data-card-grid sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(5, 1fr)', sm: 'repeat(8, 1fr)' }, gap: { xs: 0.75, md: 1 } }}>
+        <Box data-card-grid sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(5, 1fr)', sm: `repeat(${few ? 6 : 8}, 1fr)` }, gap: { xs: 0.75, md: 1 } }}>
           {cards.map((card, index) => {
             const active = selected?.section === key && selected.index === index;
             return (
@@ -340,11 +341,14 @@ function Section({
                   cursor: 'pointer',
                   display: 'block',
                   borderRadius: CARD_RADIUS,
-                  outline: active ? `2px solid ${dmf.orange}` : '2px solid transparent',
+                  // The selected card stays lifted, with a thick outline
+                  outline: active ? `3px solid ${dmf.orange}` : '3px solid transparent',
                   outlineOffset: 2,
-                  transition: 'transform 150ms ease, outline-color 150ms',
-                  '&:hover': { transform: 'translateY(-4px)' },
-                  '&:focus-visible': { outline: `2px solid ${dmf.ice}` },
+                  transform: active ? 'translateY(-4px)' : 'none',
+                  transition: `transform 150ms ${easeOut}, outline-color 150ms`,
+                  [canHover]: { '&:hover': { transform: 'translateY(-4px)' } },
+                  '&:active': { transform: 'scale(0.96)' },
+                  '&:focus-visible': { outline: `3px solid ${dmf.ice}` },
                 }}
               >
                 <CardImage src={images[card] ?? null} alt={`Card ${card}`} />
@@ -373,6 +377,7 @@ export default function CardBrowser({
   const [selected, setSelected] = useState<Selected | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const panel = usePanelHeight(desktop);
+  const few = sections.reduce((n, s) => n + s.cards.length, 0) <= FEW_CARDS;
   // Texts load in the background once the cards are on screen
   const texts = useCardTexts(sections.flatMap((s) => s.cards));
 
@@ -384,12 +389,12 @@ export default function CardBrowser({
   return (
     <>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '320px 1fr' }, gap: { xs: 3, md: 4 }, alignItems: 'stretch', mt: 4 }}>
-        {/* Card + card text is as tall as 5 rows of the Main Deck box, whatever the deck size.
-            The aside spans the whole card column and the panel sticks below the header while
-            scrolling, so it travels from the top of the Main Deck to the bottom of the last box.
-            On short windows it's capped so it always fits on screen. */}
+        {/* Card + card text is always as tall as a 40-card Main Deck box. The aside spans the
+            whole card column and the panel sticks below the header while scrolling, so it travels
+            from the top of the Main Deck to the bottom of the last box. On short windows it's
+            capped so it always fits on screen. */}
         <Box component="aside" sx={{ display: { xs: 'none', md: 'block' } }}>
-          <Box sx={{ position: 'sticky', top: 96, height: panel.height ?? 870, maxHeight: 'calc(100vh - 120px)' }}>
+          <Box sx={{ position: 'sticky', top: PANEL_TOP, height: panel.height ?? 870, maxHeight: 'calc(100vh - 120px)' }}>
             <CardInfo card={selected?.card ?? null} images={images} texts={texts} />
           </Box>
         </Box>
@@ -397,7 +402,7 @@ export default function CardBrowser({
         {/* The last card box stretches so both columns end at the same line. */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, '& > section:last-of-type': { flexGrow: 1 } }}>
           {sections.map((s, i) => (
-            <Section key={s.key} sectionRef={i === 0 ? panel.ref : undefined} section={s} images={images} texts={texts} selected={selected} onSelect={select} errataTags={errataTags} />
+            <Section key={s.key} sectionRef={i === 0 ? panel.ref : undefined} section={s} images={images} texts={texts} selected={selected} onSelect={select} errataTags={errataTags} few={few} />
           ))}
         </Box>
       </Box>

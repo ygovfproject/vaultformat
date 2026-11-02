@@ -12,8 +12,7 @@ import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import { NAV_ITEMS } from '@/lib/nav';
-import { dmf, fonts } from '@/theme';
-import { pulse } from './Decor';
+import { canHover, dmf, easeOut, fonts } from '@/theme';
 
 function isActive(pathname: string, href: string) {
   return href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -35,7 +34,7 @@ function Logo() {
           border: `2px solid ${dmf.ice}`,
           transform: 'rotate(45deg)',
           position: 'relative',
-          '&::after': { content: '""', position: 'absolute', inset: 3, bgcolor: dmf.orange, animation: `${pulse} 2.4s ease-in-out infinite` },
+          '&::after': { content: '""', position: 'absolute', inset: 3, bgcolor: dmf.orange },
         }}
       />
       <Box
@@ -71,7 +70,7 @@ const linkSx = (active: boolean) => ({
   color: active ? dmf.orange : dmf.text,
   transition: 'color 150ms',
   // Current page: no hover effect. Other pages: text turns blue.
-  ...(active ? { cursor: 'default' } : { '&:hover': { color: dmf.ice } }),
+  ...(active ? { cursor: 'default' } : { [canHover]: { '&:hover': { color: dmf.ice } } }),
   '&::after': {
     content: '""',
     position: 'absolute',
@@ -82,7 +81,7 @@ const linkSx = (active: boolean) => ({
     bgcolor: dmf.orange,
     transform: active ? 'scaleX(1)' : 'scaleX(0)',
     transformOrigin: 'left',
-    transition: 'transform 200ms ease',
+    transition: `transform 200ms ${easeOut}`,
   },
 });
 

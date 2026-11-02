@@ -5,7 +5,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import { dmf, fonts } from '@/theme';
+import { dmf, easeOut, fonts } from '@/theme';
 import { GlitchDivider, GradientTitle, PixelEdge, patternBg } from './Decor';
 import Markdown from './Markdown';
 
@@ -99,8 +99,10 @@ export default function SectionBand({
           spacing={{ xs: 2, md: 8 }}
           sx={{
             opacity: shown ? 1 : 0,
-            transform: shown ? 'none' : 'translateY(32px)',
-            transition: 'opacity 700ms ease, transform 700ms ease',
+            transform: shown ? 'none' : 'translateY(24px)',
+            transition: `opacity 500ms ${easeOut}, transform 500ms ${easeOut}`,
+            // Reduced motion: fade in only, no slide
+            '@media (prefers-reduced-motion: reduce)': { transform: 'none' },
           }}
         >
           <Grid size={{ xs: 12, md: 5 }}>

@@ -173,6 +173,7 @@ export function FlipFan({ cards }: { cards: string[] }) {
             zIndex: f.z,
             width: 205,
             perspective: '1200px',
+            transform: `rotate(${f.r})`, // the tilt without the float (reduced motion)
             animation: `${float} 6s ease-in-out ${f.d} infinite`,
             // The shadow lives here, not on the flipping element: a `filter` there would
             // flatten the 3D flip, and the card back would never show.

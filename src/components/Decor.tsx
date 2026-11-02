@@ -4,8 +4,7 @@ import { useId } from 'react';
 import NextLink from 'next/link';
 import Box from '@mui/material/Box';
 import Typography, { type TypographyProps } from '@mui/material/Typography';
-import { keyframes } from '@emotion/react';
-import { dmf, fonts } from '@/theme';
+import { canHover, dmf, easeOut, fonts } from '@/theme';
 
 /** Subtle diagonal-line texture used on dark bands. */
 export const patternBg = {
@@ -34,12 +33,6 @@ export function GradientTitle({ sx, component = 'h2', ...props }: TypographyProp
   );
 }
 
-/** Slow blink of the Vault Format diamond (divider and header logo). */
-export const pulse = keyframes`
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
-`;
-
 /**
  * Heading underline: solid bar → "//" slashes → fading rail with ticks → Vault Format diamond.
  * Scales proportionally (no stretching), so the slashes and diamond keep their shape.
@@ -55,7 +48,6 @@ export function GlitchDivider({ color = dmf.orange, accent }: { color?: string; 
         maxWidth: 520,
         my: 3,
         lineHeight: 0,
-        '& .dmf-pulse': { animation: `${pulse} 2.4s ease-in-out infinite` },
       }}
     >
       <svg viewBox="0 0 520 16" width="100%" aria-hidden style={{ display: 'block', overflow: 'visible' }}>
@@ -82,7 +74,7 @@ export function GlitchDivider({ color = dmf.orange, accent }: { color?: string; 
 
         {/* Vault Format diamond */}
         <polygon points="490,1 497,8 490,15 483,8" fill="none" stroke={second} strokeWidth="2" />
-        <polygon className="dmf-pulse" points="490,5 493,8 490,11 487,8" fill={color} />
+        <polygon points="490,5 493,8 490,11 487,8" fill={color} />
 
         {/* Trailing bits */}
         <rect x="506" y="6.5" width="3" height="3" fill={second} opacity="0.7" />
@@ -125,9 +117,13 @@ export function NotchButton({
         cursor: 'pointer',
         font: 'inherit',
         textDecoration: 'none',
-        transition: 'border-color 150ms, transform 150ms',
-        '&:hover': { borderColor: '#ffd2b0', transform: 'translateY(-2px)' },
-        '&:hover > span': { bgcolor: solid ? '#ffa565' : 'rgba(255,138,61,0.12)' },
+        transition: `border-color 150ms, transform 150ms ${easeOut}`,
+        [canHover]: {
+          '&:hover': { borderColor: '#ffd2b0', transform: 'translateY(-2px)' },
+          '&:hover > span': { bgcolor: solid ? '#ffa565' : 'rgba(255,138,61,0.12)' },
+        },
+        // Pressed: a small push in (after the hover lift, so it wins while hovering too)
+        '&:active': { transform: 'scale(0.97)' },
         '&::before, &::after': {
           content: '""',
           position: 'absolute',
@@ -148,7 +144,7 @@ export function NotchButton({
           py: 1.5,
           fontFamily: fonts.ui,
           fontWeight: 700,
-          fontSize: '0.95rem',
+          fontSize: 'max(13px, 0.95rem)',
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
           color: solid ? dmf.ink : dmf.orange,

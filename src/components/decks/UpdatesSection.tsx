@@ -45,7 +45,7 @@ function UpdateEntry({ update, latest = false }: { update: Update; latest?: bool
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 1 }}>
         <Typography
           component="time"
-          sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', color: dmf.ice, fontSize: '0.95rem' }}
+          sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', color: dmf.ice, fontSize: 'max(13px, 0.95rem)' }}
         >
           {update.date}
         </Typography>
@@ -56,7 +56,7 @@ function UpdateEntry({ update, latest = false }: { update: Update; latest?: bool
               px: 1,
               py: 0.25,
               fontFamily: fonts.ui,
-              fontSize: '0.7rem',
+              fontSize: 'max(13px, 0.7rem)',
               fontWeight: 700,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
@@ -116,7 +116,7 @@ export default function UpdatesSection({ updates }: { updates: Update[] }) {
               py: 1,
               fontFamily: fonts.ui,
               fontWeight: 700,
-              fontSize: '0.8rem',
+              fontSize: 'max(13px, 0.8rem)',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               color: dmf.ice,
