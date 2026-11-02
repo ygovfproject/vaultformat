@@ -2,10 +2,9 @@
 
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Typography from '@mui/material/Typography';
-import { dmf } from '@/theme';
+import Box from '@mui/material/Box';
 import DeckViewer from '../decks/DeckViewer';
-import { GlitchDivider, GradientTitle, NotchButton, SlashLabel } from '../Decor';
+import { GlitchDivider, Title, NotchButton, Subtitle } from '../Decor';
 import PageShell, { PAGE_TITLE_SIZE } from '../PageShell';
 import PageLoading from './PageLoading';
 import { useContent } from './useContent';
@@ -24,15 +23,16 @@ export default function DeckPage() {
   if (!deck.d) {
     return (
       <PageShell>
-        <SlashLabel>Deck</SlashLabel>
-        <GradientTitle variant="h1" component="h1" sx={{ fontSize: PAGE_TITLE_SIZE }}>
+        <Title variant="h1" component="h1" sx={{ fontSize: PAGE_TITLE_SIZE }}>
           Deck not found
-        </GradientTitle>
+        </Title>
         <GlitchDivider />
-        <Typography sx={{ color: dmf.textMuted, mb: 4 }}>There&apos;s no deck called &quot;{id}&quot; in the pool.</Typography>
-        <NotchButton href="/decks" variant="ghost">
-          All decks
-        </NotchButton>
+        <Subtitle>There&apos;s no deck called &quot;{id}&quot; in the Vault Format pool.</Subtitle>
+        <Box sx={{ mt: 4 }}>
+          <NotchButton href="/decks" variant="ghost">
+            All decks
+          </NotchButton>
+        </Box>
       </PageShell>
     );
   }

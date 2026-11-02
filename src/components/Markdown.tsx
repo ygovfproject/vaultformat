@@ -35,8 +35,8 @@ function remarkBr() {
 
 function palette(tone: Tone) {
   return tone === 'ice'
-    ? { text: dmf.ink, muted: 'rgba(10,22,40,0.8)', accent: dmf.ink, strong: '#000', line: 'rgba(10,22,40,0.25)' }
-    : { text: dmf.text, muted: dmf.textMuted, accent: dmf.orange, strong: dmf.ice, line: 'rgba(232,238,247,0.12)' };
+    ? { text: dmf.ink, accent: dmf.ink, strong: '#000', line: 'rgba(10,22,40,0.25)' }
+    : { text: dmf.text, accent: dmf.orange, strong: dmf.ice, line: 'rgba(232,238,247,0.12)' };
 }
 
 type HastNode = { type: string; tagName?: string; value?: string; children?: HastNode[] };
@@ -53,7 +53,12 @@ function ruleId(node: HastNode | undefined): string | undefined {
 function buildComponents(tone: Tone): Components {
   const c = palette(tone);
   return {
-    h1: ({ children }) => <Typography variant="h2" component="h2" sx={{ color: c.text, mb: 2 }}>{children}</Typography>,
+    // Same size as the Rulings page's section headings, so an intro heading ("Overview") matches them
+    h1: ({ children }) => (
+      <Typography variant="h2" component="h2" sx={{ color: c.text, fontSize: { xs: '1.9rem', md: '2.4rem' }, mt: 4, mb: 3, '&:first-child': { mt: 0 } }}>
+        {children}
+      </Typography>
+    ),
     h2: ({ children }) => <Typography variant="h3" component="h3" sx={{ color: c.text, mt: 4, mb: 2 }}>{children}</Typography>,
     h3: ({ children }) => <Typography variant="h4" component="h3" sx={{ color: c.accent, mt: 4, mb: 1.5 }}>{children}</Typography>,
     h4: ({ children }) => <Typography variant="h5" component="h4" sx={{ color: c.text, mt: 3, mb: 1 }}>{children}</Typography>,
@@ -64,7 +69,8 @@ function buildComponents(tone: Tone): Components {
         variant="body1"
         id={ruleId(node)}
         sx={{
-          color: c.muted,
+          color: c.text,
+          maxWidth: '65ch', // comfortable line length
           mb: 2.5,
           '&:last-child': { mb: 0 },
           scrollMarginTop: 96,
@@ -116,7 +122,8 @@ function buildComponents(tone: Tone): Components {
           component="li"
           variant="body1"
           sx={{
-            color: c.muted,
+            color: c.text,
+            maxWidth: '65ch',
             position: 'relative',
             pl: 4,
             '& > p': { mb: 0 },
@@ -134,7 +141,7 @@ function buildComponents(tone: Tone): Components {
             // Numbered badge for <ol>
             'ol > &': { counterIncrement: 'step' },
             'ol > &::before': {
-              content: 'counter(step, decimal-leading-zero)',
+              content: 'counter(step) "."',
               position: 'absolute',
               left: 0,
               top: '0.1em',
@@ -197,7 +204,7 @@ function buildComponents(tone: Tone): Components {
         {children}
       </TableCell>
     ),
-    td: ({ children }) => <TableCell sx={{ color: c.muted, borderColor: c.line }}>{children}</TableCell>,
+    td: ({ children }) => <TableCell sx={{ color: c.text, borderColor: c.line }}>{children}</TableCell>,
     img: ({ src, alt }) => (
       <Box component="img" src={typeof src === 'string' ? src : undefined} alt={alt ?? ''} sx={{ maxWidth: '100%', display: 'block', my: 3 }} />
     ),

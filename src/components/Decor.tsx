@@ -4,7 +4,7 @@ import { useId } from 'react';
 import NextLink from 'next/link';
 import Box from '@mui/material/Box';
 import Typography, { type TypographyProps } from '@mui/material/Typography';
-import { canHover, dmf, easeOut, fonts } from '@/theme';
+import { canHover, dmf, easeOut, fonts, size } from '@/theme';
 
 /** Subtle diagonal-line texture used on dark bands. */
 export const patternBg = {
@@ -13,24 +13,14 @@ export const patternBg = {
     radial-gradient(900px 400px at 85% 0%, rgba(56,200,255,0.08), transparent 70%)`,
 };
 
-/** Heading filled with the orange → ice gradient. */
-export function GradientTitle({ sx, component = 'h2', ...props }: TypographyProps & { component?: React.ElementType }) {
-  return (
-    <Typography
-      component={component}
-      {...props}
-      sx={[
-        {
-          background: dmf.gradient,
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          color: 'transparent',
-          filter: 'drop-shadow(0 3px 0 rgba(0,0,0,0.45))',
-        },
-        ...(Array.isArray(sx) ? sx : [sx]),
-      ]}
-    />
-  );
+/** Page and section heading: display type in solid text colour (the gradient is the logo's alone). */
+export function Title({ sx, component = 'h2', ...props }: TypographyProps & { component?: React.ElementType }) {
+  return <Typography component={component} {...props} sx={[{ color: dmf.text }, ...(Array.isArray(sx) ? sx : [sx])]} />;
+}
+
+/** The plain line under a page title that says what the page is. */
+export function Subtitle({ children }: { children: React.ReactNode }) {
+  return <Typography sx={{ color: dmf.text, maxWidth: '65ch', mb: 2 }}>{children}</Typography>;
 }
 
 /**
@@ -142,9 +132,9 @@ export function NotchButton({
           textAlign: 'center',
           px: { xs: 3, md: 4 },
           py: 1.5,
-          fontFamily: fonts.ui,
+          fontFamily: fonts.display,
           fontWeight: 700,
-          fontSize: 'max(13px, 0.95rem)',
+          fontSize: size.ui,
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
           color: solid ? dmf.ink : dmf.orange,
@@ -190,17 +180,5 @@ export function PixelEdge({ color = dmf.bg, flip = false }: { color?: string; fl
         ))}
       </svg>
     </Box>
-  );
-}
-
-/** Overline label with the "//" motif, e.g. "// Updates". */
-export function SlashLabel({ children, color = dmf.ice }: { children: React.ReactNode; color?: string }) {
-  return (
-    <Typography variant="overline" component="p" sx={{ color, display: 'block', mb: 2, lineHeight: 1.5 }}>
-      <Box component="span" sx={{ color: dmf.orange, mr: 1, fontFamily: fonts.display, letterSpacing: '0.05em' }}>
-        {'//'}
-      </Box>
-      {children}
-    </Typography>
   );
 }

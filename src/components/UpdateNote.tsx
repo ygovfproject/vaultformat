@@ -5,7 +5,7 @@ import NextLink from 'next/link';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { canHover, dmf, fonts } from '@/theme';
+import { canHover, dmf, fonts, size } from '@/theme';
 import type { UpdateNews } from '@/lib/content';
 
 /**
@@ -55,8 +55,8 @@ export default function UpdateNote({ news }: { news: UpdateNews }) {
             py: 1.25,
             color: dmf.text,
             textDecoration: 'none',
-            fontFamily: fonts.ui,
-            fontSize: 'max(13px, 0.875rem)',
+            fontFamily: fonts.display,
+            fontSize: size.ui,
             fontWeight: 600,
             [canHover]: {
               '&:hover .name': { color: dmf.orange },
@@ -73,10 +73,9 @@ export default function UpdateNote({ news }: { news: UpdateNews }) {
             </Box>
           ) : (
           <>
-          {/* With a name: "NEW// Ancient Legacy update ..."; without: "NEW UPDATE// ..." */}
-          <Box component="span" sx={{ fontFamily: fonts.display, fontWeight: 700, color: dmf.orange, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            {name ? 'New' : 'New update'}
-            {'//'}
+          {/* With a name: "New: Ancient Legacy update ..."; without: "New update: ..." */}
+          <Box component="span" sx={{ fontWeight: 700, color: dmf.orange }}>
+            {name ? 'New:' : 'New update:'}
           </Box>
           {name && (
             <Box component="span" className="name" sx={{ transition: 'color 150ms' }}>

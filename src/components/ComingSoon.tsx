@@ -3,7 +3,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { keyframes } from '@emotion/react';
-import { dmf, fonts } from '@/theme';
+import { dmf, fonts, size } from '@/theme';
 import { withBase } from '@/lib/basePath';
 
 // Two face-down cards: the front one slowly bobs and tilts, like a deck being shuffled
@@ -53,13 +53,10 @@ export default function ComingSoon({ title, text }: { title: string; text: strin
         />
       </Box>
       <Box>
-        <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '1.3rem', color: dmf.text }}>
+        <Typography component="h2" sx={{ fontFamily: fonts.display, fontWeight: 700, fontSize: size.sub, color: dmf.text }}>
           {title}
-          <Box component="span" sx={{ color: dmf.orange, ml: 1 }}>
-            {'//'}
-          </Box>
         </Typography>
-        <Typography sx={{ color: dmf.textMuted, mt: 1 }}>{text}</Typography>
+        <Typography sx={{ color: dmf.text, mt: 1 }}>{text}</Typography>
       </Box>
     </Box>
   );

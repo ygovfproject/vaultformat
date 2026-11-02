@@ -8,7 +8,7 @@ import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { canHover, dmf, easeOut, fonts } from '@/theme';
+import { canHover, dmf, easeOut, fonts, size } from '@/theme';
 import { cardText, isErratum, withoutErratumLine } from '@/lib/fileServer';
 import ScrollArea from './ScrollArea';
 
@@ -117,7 +117,7 @@ function CardText({ text }: { text: string }) {
       {parts.map((lines, i) => (
         <Box key={i}>
           {i > 0 && <Box role="separator" sx={{ my: 1.5, height: '1px', background: `linear-gradient(90deg, ${dmf.ice}99, ${dmf.ice}22)` }} />}
-          <Typography sx={{ whiteSpace: 'pre-line', fontSize: 'max(15px, 0.95rem)', lineHeight: 1.65, color: dmf.text }}>{lines.join('\n').trim()}</Typography>
+          <Typography sx={{ whiteSpace: 'pre-line', fontSize: size.text, lineHeight: 1.65, color: dmf.text }}>{lines.join('\n').trim()}</Typography>
         </Box>
       ))}
     </>
@@ -136,7 +136,7 @@ function ErrataBanner() {
         bgcolor: 'rgba(255,138,61,0.1)',
       }}
     >
-      <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: dmf.orange, fontSize: 'max(13px, 0.9rem)' }}>
+      <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: dmf.orange, fontSize: size.ui }}>
         Vault Format erratum
       </Typography>
     </Box>
@@ -226,11 +226,11 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
     <>
       {isErrata(card, texts) && <ErrataBanner />}
       {text === undefined ? (
-        <Typography sx={{ fontSize: 'max(15px, 0.95rem)', color: dmf.textMuted, fontStyle: 'italic' }}>Loading card text…</Typography>
+        <Typography sx={{ fontSize: size.text, color: dmf.textMuted, fontStyle: 'italic' }}>Loading card text…</Typography>
       ) : text ? (
         <CardText text={withoutErratumLine(text)} />
       ) : (
-        <Typography sx={{ fontSize: 'max(15px, 0.95rem)', color: dmf.textMuted, fontStyle: 'italic' }}>No card text.</Typography>
+        <Typography sx={{ fontSize: size.text, color: dmf.textMuted, fontStyle: 'italic' }}>No card text.</Typography>
       )}
     </>
   );
@@ -308,19 +308,16 @@ function Section({
   return (
     <Box component="section" ref={sectionRef} sx={{ border: '1px solid rgba(56,200,255,0.18)', bgcolor: 'rgba(6,14,28,0.55)', p: { xs: 1.5, md: 2.5 } }}>
       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 2 }}>
-        <Typography component="h2" sx={{ fontFamily: fonts.display, fontWeight: 700, textTransform: 'uppercase', fontSize: { xs: '1.1rem', md: '1.35rem' }, color: dmf.text }}>
+        <Typography component="h2" sx={{ fontFamily: fonts.display, fontWeight: 700, textTransform: 'uppercase', fontSize: { xs: '1.1rem', md: size.sub }, color: dmf.text }}>
           {label}
         </Typography>
-        <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.1em', color: dmf.textMuted }}>
-          <Box component="span" sx={{ color: dmf.orange }}>
-            {'// '}
-          </Box>
-          {cards.length}
+        <Typography sx={{ fontFamily: fonts.display, fontWeight: 600, fontSize: size.ui, color: dmf.textMuted }}>
+          {cards.length} {cards.length === 1 ? 'card' : 'cards'}
         </Typography>
       </Box>
 
       {cards.length === 0 ? (
-        <Typography sx={{ color: dmf.textMuted, fontStyle: 'italic', fontSize: 'max(13px, 0.9rem)' }}>Empty</Typography>
+        <Typography sx={{ color: dmf.textMuted, fontStyle: 'italic', fontSize: size.ui }}>Empty</Typography>
       ) : (
         <Box data-card-grid sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(5, 1fr)', sm: `repeat(${few ? 6 : 8}, 1fr)` }, gap: { xs: 0.75, md: 1 } }}>
           {cards.map((card, index) => {

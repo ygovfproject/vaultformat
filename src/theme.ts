@@ -13,13 +13,27 @@ export const dmf = {
   text: '#e8eef7',
   textMuted: '#a7b8cf',
   ink: '#0a1628',
-  gradient: 'linear-gradient(180deg, #ff8a3d 0%, #38c8ff 100%)',
 };
 
+/** Two typefaces: Chakra Petch for headings, buttons, navigation and labels; Work Sans for text. */
 export const fonts = {
   display: 'var(--font-display), "Arial Narrow", sans-serif',
   body: 'var(--font-body), "Segoe UI", Roboto, Arial, sans-serif',
-  ui: 'var(--font-ui), "Segoe UI", Roboto, Arial, sans-serif',
+};
+
+/**
+ * Type scale below the headings (which are set by the theme's h1-h6 and each page's title). Use
+ * these instead of one-off sizes. Small sizes never go below 13px, even with the phone scaling.
+ */
+export const size = {
+  /** Tags, captions, the footer's fine print */
+  small: 'max(13px, 0.8125rem)',
+  /** Navigation, buttons, labels */
+  ui: 'max(13px, 0.875rem)',
+  /** Running text in narrow places: card texts, update notes */
+  text: '1rem',
+  /** Small headings: card box titles, deck names, update titles */
+  sub: '1.375rem',
 };
 
 /** Easing for everything that moves: starts fast, settles gently. */
@@ -43,17 +57,17 @@ const theme = createTheme({
   shape: { borderRadius: 0 },
   typography: {
     fontFamily: fonts.body,
-    h1: { ...display, fontSize: '4rem', letterSpacing: '0.025em' },
-    h2: { ...display, fontSize: '3rem', letterSpacing: '0.025em' },
+    // Large headings are set slightly tight; small ones keep the face's own spacing
+    h1: { ...display, fontSize: '4rem', letterSpacing: '-0.01em' },
+    h2: { ...display, fontSize: '3rem', letterSpacing: '-0.01em' },
     h3: { ...display, fontSize: '1.75rem' },
-    h4: { ...display, fontSize: '1.4rem' },
-    h5: { ...display, fontSize: '1.2rem' },
+    h4: { ...display, fontSize: size.sub },
+    h5: { ...display, fontSize: '1.125rem' },
     h6: { ...display, fontSize: '1rem' },
     body1: { fontSize: '1.125rem', lineHeight: 1.7 },
-    body2: { fontSize: 'max(14px, 0.875rem)' },
-    caption: { fontSize: 'max(13px, 0.75rem)' },
-    overline: { fontFamily: fonts.ui, fontWeight: 700, letterSpacing: '0.2em', fontSize: 'max(13px, 0.75rem)' },
-    button: { fontFamily: fonts.ui, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' },
+    body2: { fontSize: size.ui },
+    caption: { fontSize: size.small },
+    button: { fontFamily: fonts.display, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' },
   },
   components: {
     MuiCssBaseline: {

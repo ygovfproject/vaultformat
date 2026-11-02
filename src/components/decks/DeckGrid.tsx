@@ -9,7 +9,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import SearchIcon from '@mui/icons-material/Search';
 import { keyframes } from '@emotion/react';
-import { canHover, dmf, easeOut, fonts } from '@/theme';
+import { canHover, dmf, easeOut, fonts, size } from '@/theme';
 import type { Deck } from '@/lib/content';
 
 type Sort = 'newest' | 'az';
@@ -134,7 +134,7 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
           }}
         />
 
-        {/* New // */}
+        {/* New tag */}
         {isNew && (
           <Box
             sx={{
@@ -143,20 +143,16 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
               left: 10,
               px: 1,
               py: 0.25,
-              bgcolor: 'rgba(6,14,28,0.75)',
-              backdropFilter: 'blur(4px)',
+              bgcolor: dmf.orange,
               fontFamily: fonts.display,
               fontWeight: 700,
-              fontSize: 'max(13px, 0.8rem)',
-              letterSpacing: '0.12em',
+              fontSize: size.small,
+              letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: dmf.text,
+              color: dmf.ink,
             }}
           >
-            New{' '}
-            <Box component="span" sx={{ color: dmf.orange }}>
-              {'//'}
-            </Box>
+            New
           </Box>
         )}
 
@@ -169,7 +165,7 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
               fontFamily: fonts.display,
               fontWeight: 700,
               textTransform: 'uppercase',
-              fontSize: { xs: '1.05rem', md: '1.3rem' },
+              fontSize: { xs: '1.05rem', md: size.sub },
               lineHeight: 1.05,
               color: dmf.text,
               textShadow: '0 2px 8px rgba(0,0,0,0.8)',
@@ -233,8 +229,8 @@ export default function DeckGrid({ decks }: { decks: Deck[] }) {
           sx={{
             '& .MuiToggleButton-root': {
               px: 2,
-              fontFamily: fonts.ui,
-              fontSize: 'max(13px, 0.8125rem)',
+              fontFamily: fonts.display,
+              fontSize: size.ui,
               fontWeight: 700,
               letterSpacing: '0.08em',
               color: dmf.textMuted,

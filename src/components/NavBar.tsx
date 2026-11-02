@@ -12,7 +12,7 @@ import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import { NAV_ITEMS } from '@/lib/nav';
-import { canHover, dmf, easeOut, fonts } from '@/theme';
+import { canHover, dmf, easeOut, fonts, size } from '@/theme';
 
 function isActive(pathname: string, href: string) {
   return href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -61,9 +61,9 @@ const linkSx = (active: boolean) => ({
   position: 'relative' as const,
   px: 2,
   py: 1,
-  fontFamily: fonts.ui,
+  fontFamily: fonts.display,
   fontWeight: 600,
-  fontSize: '0.875rem',
+  fontSize: size.ui,
   letterSpacing: '0.06em',
   textTransform: 'uppercase' as const,
   textDecoration: 'none',
@@ -144,7 +144,7 @@ export default function NavBar() {
               component={NextLink}
               href={item.href}
               onClick={() => setOpen(false)}
-              sx={{ ...linkSx(isActive(pathname, item.href)), fontSize: '1.25rem', fontFamily: fonts.display, fontWeight: 700 }}
+              sx={{ ...linkSx(isActive(pathname, item.href)), fontSize: size.sub, fontFamily: fonts.display, fontWeight: 700 }}
             >
               {item.label}
             </Box>

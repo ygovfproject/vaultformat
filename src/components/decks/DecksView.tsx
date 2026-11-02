@@ -2,10 +2,9 @@
 
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
-import Typography from '@mui/material/Typography';
-import { dmf, fonts } from '@/theme';
+import { dmf } from '@/theme';
 import type { Deck, Update } from '@/lib/content';
-import { GlitchDivider, GradientTitle, SlashLabel, patternBg } from '../Decor';
+import { GlitchDivider, Subtitle, Title, patternBg } from '../Decor';
 import { PAGE_MAX_WIDTH, PAGE_PB, PAGE_PT, PAGE_TITLE_SIZE } from '../PageShell';
 import UpdatesSection from './UpdatesSection';
 import DeckGrid from './DeckGrid';
@@ -27,19 +26,15 @@ export default function DecksView({ decks, updates }: { decks: Deck[]; updates: 
         }}
       >
         <Container maxWidth={PAGE_MAX_WIDTH}>
-          <SlashLabel>The Vault Format pool</SlashLabel>
-          <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 3, flexWrap: 'wrap' }}>
-            <GradientTitle variant="h1" component="h1" sx={{ fontSize: PAGE_TITLE_SIZE }}>
-              Decks
-            </GradientTitle>
-            {decks.length > 0 && (
-              <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, color: dmf.textMuted, letterSpacing: '0.12em', pb: 1.5 }}>
-                <Box component="span" sx={{ color: dmf.orange }}>{'// '}</Box>
-                {decks.length} {decks.length === 1 ? 'DECK' : 'DECKS'}
-              </Typography>
-            )}
-          </Box>
+          <Title variant="h1" component="h1" sx={{ fontSize: PAGE_TITLE_SIZE }}>
+            Decks
+          </Title>
           <GlitchDivider />
+          {decks.length > 0 && (
+            <Subtitle>
+              The Vault Format pool: {decks.length} premade {decks.length === 1 ? 'deck' : 'decks'}. Pick one and play it as it is.
+            </Subtitle>
+          )}
           {decks.length === 0 ? (
             <ComingSoon title="Still shuffling" text="The first Vault Format decks are on the testing table, duel after duel, until every one of them can beat every other. They join the pool soon." />
           ) : (

@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { dmf } from '@/theme';
+import { dmf, fonts, size } from '@/theme';
 import { splitMarkdown } from '@/lib/sections';
 import { downloadRulesPdf, rulesVersion } from '@/lib/rulesPdf';
-import { GlitchDivider, GradientTitle, NotchButton, SlashLabel } from './Decor';
+import { GlitchDivider, Title, NotchButton } from './Decor';
 import PageShell, { PAGE_TITLE_SIZE } from './PageShell';
 import Markdown from './Markdown';
 
@@ -62,14 +62,13 @@ export default function RulingsView({ markdown }: { markdown: string }) {
 
   return (
     <PageShell>
-        <SlashLabel>Vault Format rules</SlashLabel>
-        <GradientTitle variant="h1" component="h1" sx={{ fontSize: PAGE_TITLE_SIZE }}>
+        <Title variant="h1" component="h1" sx={{ fontSize: PAGE_TITLE_SIZE }}>
           {page.title || 'Rulings'}
-        </GradientTitle>
+        </Title>
         <GlitchDivider />
 
         {page.intro && (
-          <Box sx={{ maxWidth: 820, mb: 2 }}>
+          <Box sx={{ mb: 2 }}>
             <Markdown>{page.intro}</Markdown>
           </Box>
         )}
@@ -83,14 +82,16 @@ export default function RulingsView({ markdown }: { markdown: string }) {
         )}
 
         {page.sections.length === 0 && !page.intro && (
-          <Typography sx={{ color: dmf.textMuted }}>No rulings yet.</Typography>
+          <Typography sx={{ color: dmf.text }}>No rulings yet.</Typography>
         )}
 
         {page.sections.length > 0 && (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '240px 1fr' }, gap: { xs: 2, md: 6 }, alignItems: 'start', mt: 4 }}>
             {/* Table of contents */}
             <Box component="nav" aria-label="Rulings sections" sx={{ display: { xs: 'none', md: 'block' }, position: 'sticky', top: 96 }}>
-              <SlashLabel>Contents</SlashLabel>
+              <Typography component="h2" sx={{ fontFamily: fonts.display, fontWeight: 700, fontSize: size.text, color: dmf.text, mb: 1.5 }}>
+                Contents
+              </Typography>
               <Box component="ol" sx={{ listStyle: 'none', m: 0, p: 0, borderLeft: '2px solid rgba(56,200,255,0.18)' }}>
                 {page.sections.map((s) => {
                   const on = active === s.id;
@@ -106,7 +107,7 @@ export default function RulingsView({ markdown }: { markdown: string }) {
                           ml: '-2px',
                           borderLeft: `2px solid ${on ? dmf.orange : 'transparent'}`,
                           textDecoration: 'none',
-                          fontSize: '0.9rem',
+                          fontSize: size.ui,
                           lineHeight: 1.35,
                           color: on ? dmf.text : dmf.textMuted,
                           transition: 'color 150ms, border-color 150ms',
@@ -135,12 +136,10 @@ export default function RulingsView({ markdown }: { markdown: string }) {
                     borderBottom: i < page.sections.length - 1 ? '1px solid rgba(56,200,255,0.12)' : 'none',
                   }}
                 >
-                  <GradientTitle variant="h2" component="h2" sx={{ fontSize: { xs: '1.9rem', md: '2.4rem' }, mb: 3 }}>
+                  <Title variant="h2" component="h2" sx={{ fontSize: { xs: '1.9rem', md: '2.4rem' }, mb: 3 }}>
                     {s.title}
-                  </GradientTitle>
-                  <Box sx={{ maxWidth: 820 }}>
-                    <Markdown>{s.body}</Markdown>
-                  </Box>
+                  </Title>
+                  <Markdown>{s.body}</Markdown>
                 </Box>
               ))}
             </Box>

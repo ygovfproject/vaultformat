@@ -25,7 +25,6 @@ export default function PhilosophyView({ markdown, cards = null, news = null }: 
         <SectionBand
           key={s.id}
           id={s.id}
-          index={i}
           title={s.title}
           body={s.body}
           variant={variants[i]}

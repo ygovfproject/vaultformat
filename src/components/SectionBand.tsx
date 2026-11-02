@@ -4,9 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
-import { dmf, easeOut, fonts } from '@/theme';
-import { GlitchDivider, GradientTitle, PixelEdge, patternBg } from './Decor';
+import { dmf, easeOut } from '@/theme';
+import { Title, PixelEdge, patternBg } from './Decor';
 import Markdown from './Markdown';
 
 export type BandVariant = 'pattern' | 'surface' | 'ice';
@@ -59,7 +58,6 @@ function useReveal<T extends Element>() {
 
 export default function SectionBand({
   id,
-  index,
   title,
   body,
   variant,
@@ -67,7 +65,6 @@ export default function SectionBand({
   nextColor,
 }: {
   id: string;
-  index: number;
   title: string;
   body: string;
   variant: BandVariant;
@@ -107,31 +104,12 @@ export default function SectionBand({
         >
           <Grid size={{ xs: 12, md: 5 }}>
             <Box sx={{ position: { md: 'sticky' }, top: { md: 110 } }}>
-              <Typography
-                sx={{
-                  fontFamily: fonts.display,
-                  fontWeight: 700,
-                  fontSize: '1rem',
-                  letterSpacing: '0.2em',
-                  color: ice ? dmf.ink : dmf.ice,
-                  mb: 1.5,
-                }}
-              >
-                {String(index + 1).padStart(2, '0')} //
-              </Typography>
-              {ice ? (
-                <Typography variant="h2" component="h2" sx={{ color: dmf.ink, fontSize: { xs: '2.5rem', md: '3.25rem' } }}>
-                  {title}
-                </Typography>
-              ) : (
-                <GradientTitle variant="h2" component="h2" sx={{ fontSize: { xs: '2.5rem', md: '3.25rem' } }}>
-                  {title}
-                </GradientTitle>
-              )}
-              <GlitchDivider color={ice ? dmf.ink : dmf.orange} />
+              <Title variant="h2" component="h2" sx={{ color: ice ? dmf.ink : dmf.text, fontSize: { xs: '2.5rem', md: '3.25rem' }, mb: { xs: 2, md: 0 } }}>
+                {title}
+              </Title>
             </Box>
           </Grid>
-          <Grid size={{ xs: 12, md: 7 }} sx={{ pt: { md: 5 } }}>
+          <Grid size={{ xs: 12, md: 7 }} sx={{ pt: { md: 1 } }}>
             <Markdown tone={tone}>{body}</Markdown>
           </Grid>
         </Grid>

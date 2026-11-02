@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Chakra_Petch, Work_Sans, Montserrat } from 'next/font/google';
+import { Chakra_Petch, Work_Sans } from 'next/font/google';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -11,8 +11,6 @@ import LoadingScreen from '@/components/LoadingScreen';
 
 const display = Chakra_Petch({ subsets: ['latin'], weight: ['600', '700'], variable: '--font-display' });
 const body = Work_Sans({ subsets: ['latin'], style: ['normal', 'italic'], variable: '--font-body' }); // italic: real italics for _emphasis_ instead of the browser's slanted fake
-const ui = Montserrat({ subsets: ['latin'], weight: ['500', '600', '700'], variable: '--font-ui' });
-
 export const metadata: Metadata = {
   title: { default: 'Yu-Gi-Oh! Vault Format', template: '%s · Yu-Gi-Oh! Vault Format' },
   description:
@@ -21,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${ui.variable}`}>
+    <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body>
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>

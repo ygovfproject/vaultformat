@@ -6,10 +6,9 @@ import Collapse from '@mui/material/Collapse';
 import Typography from '@mui/material/Typography';
 import ButtonBase from '@mui/material/ButtonBase';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { dmf, fonts } from '@/theme';
+import { dmf, fonts, size } from '@/theme';
 import type { Update } from '@/lib/content';
 import Markdown from '../Markdown';
-import { SlashLabel } from '../Decor';
 
 function UpdateEntry({ update, latest = false }: { update: Update; latest?: boolean }) {
   return (
@@ -45,7 +44,7 @@ function UpdateEntry({ update, latest = false }: { update: Update; latest?: bool
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 1 }}>
         <Typography
           component="time"
-          sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', color: dmf.ice, fontSize: 'max(13px, 0.95rem)' }}
+          sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', color: dmf.ice, fontSize: size.ui }}
         >
           {update.date}
         </Typography>
@@ -55,8 +54,8 @@ function UpdateEntry({ update, latest = false }: { update: Update; latest?: bool
             sx={{
               px: 1,
               py: 0.25,
-              fontFamily: fonts.ui,
-              fontSize: 'max(13px, 0.7rem)',
+              fontFamily: fonts.display,
+              fontSize: size.small,
               fontWeight: 700,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
@@ -72,7 +71,7 @@ function UpdateEntry({ update, latest = false }: { update: Update; latest?: bool
         {update.title}
       </Typography>
       {update.description && (
-        <Box sx={{ '& p, & li': { fontSize: '1rem' } }}>
+        <Box sx={{ '& p, & li': { fontSize: size.text } }}>
           <Markdown>{update.description}</Markdown>
         </Box>
       )}
@@ -95,7 +94,9 @@ export default function UpdatesSection({ updates }: { updates: Update[] }) {
         pb: { xs: 1, md: 2 },
       }}
     >
-      <SlashLabel>Updates</SlashLabel>
+      <Typography component="h2" sx={{ fontFamily: fonts.display, fontWeight: 700, fontSize: size.sub, color: dmf.text, mb: 3 }}>
+        Updates
+      </Typography>
 
       <UpdateEntry update={latest} latest />
 
@@ -114,9 +115,9 @@ export default function UpdatesSection({ updates }: { updates: Update[] }) {
               gap: 1,
               px: 2,
               py: 1,
-              fontFamily: fonts.ui,
+              fontFamily: fonts.display,
               fontWeight: 700,
-              fontSize: 'max(13px, 0.8rem)',
+              fontSize: size.ui,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               color: dmf.ice,

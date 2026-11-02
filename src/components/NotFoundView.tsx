@@ -3,9 +3,7 @@
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { dmf, fonts } from '@/theme';
-import { GlitchDivider, GradientTitle, NotchButton, SlashLabel, patternBg } from './Decor';
+import { GlitchDivider, Title, NotchButton, Subtitle, patternBg } from './Decor';
 import { ShuffleStack } from './cards/CardAnimations';
 import { useCardFeed } from './cards/useCardFeed';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -42,21 +40,15 @@ export default function NotFoundView({ cards }: { cards: string[] }) {
       <Container maxWidth="lg">
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto' }, alignItems: 'center', gap: { xs: 4, md: 8 } }}>
           <Box>
-            <SlashLabel>Error 404</SlashLabel>
-            <GradientTitle variant="h1" component="h1" sx={{ fontSize: { xs: '3rem', md: '5rem' } }}>
+            <Title variant="h1" component="h1" sx={{ fontSize: { xs: '3rem', md: '5rem' } }}>
               Card not found
-            </GradientTitle>
+            </Title>
             <GlitchDivider />
-            <Typography sx={{ color: dmf.textMuted, maxWidth: 480, mb: 1 }}>
-              This page isn&apos;t in the deck. It may have been moved, or the link is wrong.
-            </Typography>
-            <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', color: dmf.textMuted, mb: 5 }}>
-              <Box component="span" sx={{ color: dmf.orange }}>
-                {'// '}
-              </Box>
-              Shuffling for a better one...
-            </Typography>
-            <Stack direction="row" sx={{ gap: 2.5, flexWrap: 'wrap' }}>
+            <Subtitle>
+              Error 404: this page isn&apos;t in the deck. It may have been moved, or the link is wrong. Shuffling for a
+              better one…
+            </Subtitle>
+            <Stack direction="row" sx={{ gap: 2.5, flexWrap: 'wrap', mt: 5 }}>
               <NotchButton href="/">Back to Main</NotchButton>
               <NotchButton href="/decks" variant="ghost">
                 Browse Decks
