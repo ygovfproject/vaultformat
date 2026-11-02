@@ -14,6 +14,8 @@ import { withBase } from '@/lib/basePath';
 const RADIUS = '3.5% / 2.4%';
 const RATIO = '590 / 860';
 const SHADOW = `drop-shadow(0 18px 30px rgba(0,0,0,0.55)) drop-shadow(0 0 24px ${dmf.ice}33)`;
+/** The same shadow as a box-shadow, for the flip fan's card faces (see FlipFan). */
+const FACE_SHADOW = `0 18px 30px rgba(0,0,0,0.55), 0 0 24px ${dmf.ice}33`;
 
 /** Run `fn` every `ms`, unless the viewer prefers reduced motion. */
 function useTicker(fn: () => void, ms: number) {
@@ -205,9 +207,10 @@ export function FlipFan({ cards }: { cards: string[] }) {
             perspective: '1200px',
             transform: `rotate(${f.r})`, // the tilt without the float (reduced motion)
             animation: `${float} 6s ease-in-out ${f.d} infinite`,
-            // The shadow lives here, not on the flipping element: a `filter` there would
-            // flatten the 3D flip, and the card back would never show.
-            filter: SHADOW,
+            // Its own layer, so the float is only moved, not repainted. The shadow sits on the card
+            // faces (box-shadow travels with the layer; a filter here would be redrawn every frame,
+            // and on the flipping element it would flatten the 3D flip).
+            willChange: 'transform',
           }}
         >
           <Box
@@ -233,11 +236,11 @@ export function FlipFan({ cards }: { cards: string[] }) {
             style={{ transform: `rotateY(${slots[i].turns * 180}deg)` }}
           >
             {/* front */}
-            <Box sx={{ backfaceVisibility: 'hidden' }}>
+            <Box sx={{ backfaceVisibility: 'hidden', borderRadius: RADIUS, boxShadow: FACE_SHADOW }}>
               <CardImg src={slots[i].src} />
             </Box>
             {/* back */}
-            <Box sx={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+            <Box sx={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', borderRadius: RADIUS, boxShadow: FACE_SHADOW }}>
               <CardImg src={BACK} />
             </Box>
           </Box>

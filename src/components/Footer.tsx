@@ -10,20 +10,15 @@ import { dmf, fonts, size } from '@/theme';
 
 export default function Footer() {
   return (
-    <Box component="footer" sx={{ bgcolor: dmf.header, py: 5 }}>
+    <Box component="footer" sx={{ bgcolor: dmf.header, pt: { xs: 6, md: 8 }, pb: { xs: 4, md: 5 } }}>
       <Container maxWidth="lg">
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           sx={{ gap: 3, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' } }}
         >
-          <Box>
-            <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, fontSize: size.sub, letterSpacing: '0.12em', color: dmf.text }}>
-              Vault Format
-            </Typography>
-            <Typography variant="body2" sx={{ color: dmf.textMuted, mt: 0.5 }}>
-              A fan-made Yu-Gi-Oh! format.
-            </Typography>
-          </Box>
+          <Typography variant="body2" sx={{ color: dmf.textMuted }}>
+            A fan-made Yu-Gi-Oh! format.
+          </Typography>
           <Stack direction="row" sx={{ flexWrap: 'wrap', columnGap: 3, rowGap: 1.5, minWidth: 0, maxWidth: '100%' }}>
             {NAV_ITEMS.map((item) => (
               <Box
@@ -59,6 +54,28 @@ export default function Footer() {
             Yu-Gi-Oh! and all related names, card artwork and trademarks belong to their respective owners
             (© Studio Dice/SHUEISHA, TV TOKYO, KONAMI). Card artwork is shown for reference only. The Vault Format card frame
             design is original to this project.
+          </Typography>
+        </Box>
+
+        {/* The name, across the page's full width, in dim navy: a quiet signature to close the page
+            (decorative; the header already names the site). Sized from the width it has (container
+            units): "VAULT FORMAT" is about 7 times as wide as its font size. */}
+        <Box aria-hidden sx={{ mt: { xs: 5, md: 7 }, containerType: 'inline-size' }}>
+          <Typography
+            component="p"
+            sx={{
+              userSelect: 'none',
+              fontFamily: fonts.display,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+              fontSize: 'calc(100cqi / 7)',
+              lineHeight: 0.8,
+              letterSpacing: '-0.01em',
+              color: dmf.surface,
+            }}
+          >
+            Vault Format
           </Typography>
         </Box>
       </Container>
