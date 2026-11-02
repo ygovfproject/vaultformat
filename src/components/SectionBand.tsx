@@ -23,6 +23,17 @@ const backgrounds: Record<BandVariant, object> = {
   ice: { backgroundColor: dmf.ice },
 };
 
+/** Hidden below its place until `shown`, then it rises in. Reduced motion: fades in without moving. */
+const rise = (shown: boolean) => ({
+  opacity: shown ? 1 : 0,
+  transform: shown ? 'none' : 'translateY(20px)',
+  transition: `opacity 500ms ${easeOut}, transform 500ms ${easeOut}`,
+  '@media (prefers-reduced-motion: reduce)': { transform: 'none' },
+});
+
+/** Entrance delays (ms) of the text's first blocks after the heading; later blocks come with the last. */
+const STAGGER = [70, 140, 210, 280];
+
 /** Fade/slide in once the band scrolls into view. */
 function useReveal<T extends Element>() {
   const ref = useRef<T | null>(null);
@@ -84,26 +95,28 @@ export default function SectionBand({
       {ice && prevColor && <PixelEdge color={prevColor} flip />}
 
       <Container maxWidth="lg">
-        <Grid
-          ref={ref}
-          container
-          spacing={{ xs: 2, md: 8 }}
-          sx={{
-            opacity: shown ? 1 : 0,
-            transform: shown ? 'none' : 'translateY(24px)',
-            transition: `opacity 500ms ${easeOut}, transform 500ms ${easeOut}`,
-            // Reduced motion: fade in only, no slide
-            '@media (prefers-reduced-motion: reduce)': { transform: 'none' },
-          }}
-        >
+        <Grid ref={ref} container spacing={{ xs: 2, md: 8 }}>
           <Grid size={{ xs: 12, md: 5 }}>
             <Box sx={{ position: { md: 'sticky' }, top: { md: 110 } }}>
-              <Title variant="h2" component="h2" sx={{ color: ice ? dmf.ink : dmf.text, fontSize: { xs: '2.5rem', md: '3.25rem' }, mb: { xs: 2, md: 0 } }}>
+              <Title
+                variant="h2"
+                component="h2"
+                sx={{ color: ice ? dmf.ink : dmf.text, fontSize: { xs: '2.5rem', md: '3.25rem' }, mb: { xs: 2, md: 0 }, ...rise(shown) }}
+              >
                 {title}
               </Title>
             </Box>
           </Grid>
-          <Grid size={{ xs: 12, md: 7 }} sx={{ pt: { md: 1 } }}>
+          {/* The text's blocks (paragraphs, lists, quotes) follow the heading one by one */}
+          <Grid
+            size={{ xs: 12, md: 7 }}
+            sx={{
+              pt: { md: 1 },
+              '& > *': rise(shown),
+              ...Object.fromEntries(STAGGER.map((delay, i) => [`& > :nth-of-type(${i + 1})`, { transitionDelay: `${delay}ms` }])),
+              [`& > :nth-of-type(n+${STAGGER.length + 1})`]: { transitionDelay: `${STAGGER[STAGGER.length - 1]}ms` },
+            }}
+          >
             <Markdown tone={tone}>{body}</Markdown>
           </Grid>
         </Grid>

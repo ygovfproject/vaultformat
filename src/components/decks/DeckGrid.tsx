@@ -18,10 +18,14 @@ type Sort = 'newest' | 'az';
 const CUT = 18;
 const CLIP = `polygon(0 0, calc(100% - ${CUT}px) 0, 100% ${CUT}px, 100% 100%, ${CUT}px 100%, 0 calc(100% - ${CUT}px))`;
 
-const sweep = keyframes`
-  from { transform: translateX(-160%) skewX(-20deg); }
-  to { transform: translateX(360%) skewX(-20deg); }
+/** Tiles rise in one after another when the grid appears (and when a search brings one back). */
+const tileIn = keyframes`
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
 `;
+const TILE_STAGGER_MS = 40;
+/** The 13th tile on comes in with the 12th, so a long list doesn't keep the last ones waiting. */
+const TILE_STAGGER_MAX = 12;
 
 /** Shown when a deck has no cover image. */
 function CoverFallback() {
@@ -42,7 +46,7 @@ function CoverFallback() {
   );
 }
 
-function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
+function DeckTile({ deck, now, position }: { deck: Deck; now: number | null; position: number }) {
   // Built pages show the tag as of build time; in the browser it's re-checked against today's date,
   // so it disappears after 30 days even without a rebuild.
   const isNew = now === null ? deck.isNew : deck.newUntil !== null && now < deck.newUntil;
@@ -53,6 +57,9 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
       sx={{
         display: 'block',
         textDecoration: 'none',
+        // "backwards": the entrance only holds the tile before it starts, so afterwards the hover
+        // and press transforms work as usual
+        animation: `${tileIn} 400ms ${easeOut} ${Math.min(position, TILE_STAGGER_MAX) * TILE_STAGGER_MS}ms backwards`,
         '&:focus-visible': { outline: `2px solid ${dmf.orange}`, outlineOffset: 3 },
         // Outer layer = the border (clip-path can't use real borders)
         position: 'relative',
@@ -60,13 +67,12 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
         clipPath: CLIP,
         bgcolor: 'rgba(56,200,255,0.35)',
         transform: 'translateY(0)',
-        transition: `transform 250ms ${easeOut}, background-color 250ms ${easeOut}`,
+        transition: `transform 200ms ${easeOut}, background-color 200ms ${easeOut}`,
         willChange: 'transform',
+        // Hover: the tile lifts, its frame turns orange, the art leans in a little
         [canHover]: {
           '&:hover': { transform: 'translateY(-6px)', bgcolor: dmf.orange },
-          '&:hover .deck-art': { transform: 'scale(1.07)' },
-          '&:hover .deck-shade': { opacity: 0.75 },
-          '&:hover .deck-sheen': { animation: `${sweep} 1100ms ease forwards` },
+          '&:hover .deck-art': { transform: 'scale(1.04)' },
           '&:hover .deck-title': { color: dmf.orange },
           '&:active': { transform: 'translateY(-6px) scale(0.98)' },
         },
@@ -93,7 +99,7 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
               objectFit: 'cover',
               objectPosition: 'center 30%',
               transform: 'scale(1)',
-              transition: `transform 500ms ${easeOut}`,
+              transition: `transform 400ms ${easeOut}`,
               // Keep the image on its own GPU layer all the time, so it doesn't snap
               // by a sub-pixel when the zoom-out animation ends.
               willChange: 'transform',
@@ -106,28 +112,10 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
 
         {/* Bottom shade so the title stays readable */}
         <Box
-          className="deck-shade"
           sx={{
             position: 'absolute',
             inset: 0,
-            opacity: 1,
-            transition: 'opacity 250ms',
             background: `linear-gradient(180deg, rgba(6,14,28,0) 40%, rgba(6,14,28,0.7) 70%, ${dmf.bgDeep} 100%)`,
-          }}
-        />
-
-        {/* Light sweep on hover */}
-        <Box
-          className="deck-sheen"
-          aria-hidden
-          sx={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            width: '40%',
-            transform: 'translateX(-160%) skewX(-20deg)',
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)',
-            pointerEvents: 'none',
           }}
         />
 
@@ -251,8 +239,8 @@ export default function DeckGrid({ decks }: { decks: Deck[] }) {
             rowGap: { xs: 2.5, md: 4 },
           }}
         >
-          {visible.map((deck) => (
-            <DeckTile key={deck.id} deck={deck} now={now} />
+          {visible.map((deck, i) => (
+            <DeckTile key={deck.id} deck={deck} now={now} position={i} />
           ))}
         </Box>
       )}

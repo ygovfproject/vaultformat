@@ -69,8 +69,11 @@ const linkSx = (active: boolean) => ({
   textDecoration: 'none',
   color: active ? dmf.orange : dmf.text,
   transition: 'color 150ms',
-  // Current page: no hover effect. Other pages: text turns blue.
-  ...(active ? { cursor: 'default' } : { [canHover]: { '&:hover': { color: dmf.ice } } }),
+  // Current page: orange underline, no hover effect. Other pages: on hover the text turns blue and a
+  // blue underline draws in from the left.
+  ...(active
+    ? { cursor: 'default' }
+    : { [canHover]: { '&:hover': { color: dmf.ice }, '&:hover::after': { transform: 'scaleX(1)' } } }),
   '&::after': {
     content: '""',
     position: 'absolute',
@@ -78,7 +81,7 @@ const linkSx = (active: boolean) => ({
     right: 16,
     bottom: 2,
     height: 2,
-    bgcolor: dmf.orange,
+    bgcolor: active ? dmf.orange : dmf.ice,
     transform: active ? 'scaleX(1)' : 'scaleX(0)',
     transformOrigin: 'left',
     transition: `transform 200ms ${easeOut}`,

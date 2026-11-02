@@ -137,6 +137,22 @@ export async function getDecks(): Promise<Deck[]> {
     .sort((a, b) => b.timestamp - a.timestamp || a.title.localeCompare(b.title));
 }
 
+export type DeckLink = { id: string; title: string };
+
+/**
+ * The decks before and after a deck in the Decks page's order (newest first, then by title), for
+ * the deck page's previous / next links. Cheap: no covers are looked up.
+ */
+export async function deckNeighbours(id: string): Promise<{ prev: DeckLink | null; next: DeckLink | null }> {
+  const { decks, updates } = await readReleased();
+  const dateByUpdate = new Map(updates.map((u) => [String(u.id), parseDate(u.date ?? '')]));
+  const ts = (d: DeckJson) => dateByUpdate.get(String(d.update_id ?? '')) ?? 0;
+  const sorted = [...decks].sort((a, b) => ts(b) - ts(a) || a.title.localeCompare(b.title));
+  const i = sorted.findIndex((d) => d.id === id);
+  const link = (d: DeckJson | undefined) => (d ? { id: d.id, title: d.title } : null);
+  return i < 0 ? { prev: null, next: null } : { prev: link(sorted[i - 1]), next: link(sorted[i + 1]) };
+}
+
 /** content/updates/{id}.md from the file server ('' if it doesn't exist). */
 async function readUpdateText(id: string): Promise<string> {
   if (!/^[\w-]+$/.test(id)) return '';

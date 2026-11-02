@@ -1,4 +1,4 @@
-import { isUnreleasedDeck, readDecksJson } from './content';
+import { deckNeighbours, isUnreleasedDeck, readDecksJson, type DeckLink } from './content';
 import { cardImageUrl, fetchText } from './fileServer';
 
 export type DeckList = {
@@ -9,6 +9,9 @@ export type DeckList = {
   side: string[];
   /** card id → image URL on the file server (null if missing) */
   images: Record<string, string | null>;
+  /** The decks before and after it on the Decks page */
+  prev: DeckLink | null;
+  next: DeckLink | null;
 };
 
 /** Split a .ydk file into main / extra / side card ids (duplicates kept, order kept). */
@@ -43,7 +46,7 @@ export async function getDeckList(id: string): Promise<DeckList | null> {
   const images = Object.fromEntries(unique.map((c) => [c, cardImageUrl(c)]));
 
   // Title from decks.json when the deck is listed there
-  const listed = (await readDecksJson()).find((d) => d.id === id);
+  const [listed, { prev, next }] = await Promise.all([readDecksJson().then((decks) => decks.find((d) => d.id === id)), deckNeighbours(id)]);
 
-  return { id, title: listed?.title ?? prettify(id), main, extra, side, images };
+  return { id, title: listed?.title ?? prettify(id), main, extra, side, images, prev, next };
 }

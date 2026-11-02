@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import Box from '@mui/material/Box';
 import { keyframes } from '@emotion/react';
-import { dmf } from '@/theme';
+import { canHover, dmf, easeOut } from '@/theme';
 import { withBase } from '@/lib/basePath';
 
 const RADIUS = '3.5% / 2.4%';
@@ -224,7 +224,10 @@ export function FlipFan({ cards }: { cards: string[] }) {
               cursor: busy[i] ? 'default' : 'pointer',
               position: 'relative',
               transformStyle: 'preserve-3d',
-              transition: `transform ${FLIP_MS}ms cubic-bezier(.4,.1,.3,1)`,
+              transition: `transform ${FLIP_MS}ms cubic-bezier(.4,.1,.3,1), translate 200ms ${easeOut}, scale 200ms ${easeOut}`,
+              // Hover: the card lifts a little, so it reads as something to click (translate and
+              // scale are separate from the flip's transform, so the two combine)
+              [canHover]: busy[i] ? {} : { '&:hover': { translate: '0 -8px', scale: '1.03' } },
               '&:focus-visible': { outline: `2px solid ${dmf.orange}`, outlineOffset: 4 },
             }}
             style={{ transform: `rotateY(${slots[i].turns * 180}deg)` }}

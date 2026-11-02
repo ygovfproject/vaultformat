@@ -1,21 +1,26 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Drawer from '@mui/material/Drawer';
+import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import { keyframes } from '@emotion/react';
 import { canHover, dmf, easeOut, fonts, size } from '@/theme';
 import { cardData, isErratum, withoutErratumLine, type CardData } from '@/lib/fileServer';
 import ScrollArea from './ScrollArea';
 
 /**
  * Card grid + card info panel, shared by the deck pages and the errata page.
- * Desktop: info panel on the left, as tall as 5 rows of the first card box (the Main Deck).
- * Phones: tapping a card opens the info panel from the bottom.
+ * Desktop: info panel on the left, as tall as 5 rows of the first card box (the Main Deck); ← and →
+ * step through the cards.
+ * Phones: tapping a card opens the info panel from the bottom; swipe sideways (or use its arrows)
+ * for the card before / after.
  */
 
 export type CardSection = { key: string; label: string; cards: string[] };
@@ -255,6 +260,13 @@ function useCardTexts(ids: string[]): Texts {
   return texts;
 }
 
+/** A newly selected card settles in; its text fades in. */
+const cardIn = keyframes`
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+`;
+const textIn = keyframes`from { opacity: 0; } to { opacity: 1; }`;
+
 /** Big image + card text for the selected card. */
 function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: string | null; /** Phones: draggable scroll indicator */ dragScroll?: boolean }) {
   if (!card) {
@@ -286,11 +298,14 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
       {/* Card image and text box share the panel's height 40 : 60 (after the 24px gap between
           them); the image's width follows from the card's shape */}
       <Box sx={{ flex: '0 0 calc((100% - 24px) * 0.4)', minHeight: 0, display: 'flex', justifyContent: 'center' }}>
+        {/* key={card}: each new card fades in */}
         <Box
+          key={card}
           sx={{
             height: '100%',
             aspectRatio: CARD_RATIO,
             filter: `drop-shadow(0 14px 24px rgba(0,0,0,0.55)) drop-shadow(0 0 20px ${dmf.ice}22)`,
+            animation: `${cardIn} 180ms ${easeOut}`,
           }}
         >
           <CardImage src={images[card] ?? null} alt={cardName(card, texts)} eager />
@@ -306,9 +321,9 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
           bgcolor: dmf.surface,
         }}
       >
-        {/* key={card}: a new card gets a fresh text box, so its scroll starts at the top */}
+        {/* key={card}: a new card gets a fresh text box, so its scroll starts at the top (and it fades in) */}
         {dragScroll ? (
-          <ScrollArea key={card} sx={{ flex: 1, pl: 2.5, pr: 0.5, pt: 2.5, pb: 1 }}>
+          <ScrollArea key={card} sx={{ flex: 1, pl: 2.5, pr: 0.5, pt: 2.5, pb: 1, animation: `${textIn} 180ms ${easeOut}` }}>
             <Box sx={{ pb: 1.5 }}>{textBody}</Box>
           </ScrollArea>
         ) : (
@@ -321,6 +336,7 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
               overflowY: 'auto',
               scrollbarWidth: 'thin',
               scrollbarColor: `${dmf.ice}55 transparent`,
+              animation: `${textIn} 180ms ${easeOut}`,
             }}
           >
             {textBody}
@@ -374,6 +390,7 @@ function Section({
                 key={`${card}-${index}`}
                 component="button"
                 type="button"
+                data-card={`${key}-${index}`}
                 onClick={() => onSelect({ section: key, index, card })}
                 aria-label={`Show ${cardName(card, texts)}${isErrata(card, texts) ? ' (Vault Format erratum)' : ''}`}
                 aria-pressed={active}
@@ -392,7 +409,8 @@ function Section({
                   transition: `transform 150ms ${easeOut}, outline-color 150ms`,
                   [canHover]: { '&:hover': { transform: 'translateY(-4px)' } },
                   '&:active': { transform: 'scale(0.96)' },
-                  '&:focus-visible': { outline: `3px solid ${dmf.ice}` },
+                  // Keyboard focus: blue, except on the selected card (focused while stepping with ← →)
+                  '&:focus-visible': { outline: `3px solid ${active ? dmf.orange : dmf.ice}` },
                 }}
               >
                 <CardImage src={images[card] ?? null} alt={cardName(card, texts)} />
@@ -417,17 +435,67 @@ export default function CardBrowser({
 }) {
   const theme = useTheme();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
-  // No card is selected until the user clicks one.
-  const [selected, setSelected] = useState<Selected | null>(null);
+  // Every card in order (Main Deck, then Extra Deck), for stepping through them
+  const all = useMemo(() => sections.flatMap((s) => s.cards.map((card, index) => ({ section: s.key, index, card }))), [sections]);
+  // The first card is selected from the start, so the panel never starts empty
+  const [selected, setSelected] = useState<Selected | null>(() => all[0] ?? null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const panel = usePanelHeight(desktop);
-  const few = sections.reduce((n, s) => n + s.cards.length, 0) <= FEW_CARDS;
+  const few = all.length <= FEW_CARDS;
   // Texts load in the background once the cards are on screen
-  const texts = useCardTexts(sections.flatMap((s) => s.cards));
+  const texts = useCardTexts(all.map((c) => c.card));
 
   const select = (s: Selected) => {
     setSelected(s);
     if (!desktop) setSheetOpen(true);
+  };
+
+  // The card before (-1) or after (+1) the selected one; stops at the first and last card
+  const at = all.findIndex((c) => c.section === selected?.section && c.index === selected.index);
+  const neighbour = (dir: -1 | 1) => all[at + dir] ?? null;
+  const step = (dir: -1 | 1) => {
+    const to = neighbour(dir);
+    if (!to) return;
+    setSelected(to);
+    // Desktop: keep the selected card in view and focused, so the arrow keys carry on from it
+    if (desktop) {
+      const button = document.querySelector<HTMLElement>(`[data-card="${to.section}-${to.index}"]`);
+      button?.focus({ preventScroll: true });
+      button?.scrollIntoView({ block: 'nearest' });
+    }
+  };
+  const stepRef = useRef(step);
+  stepRef.current = step;
+
+  // Desktop: ← and → step through the cards (not while typing in a field)
+  useEffect(() => {
+    if (!desktop) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      if ((e.target as Element | null)?.closest?.('input, textarea, [contenteditable]')) return;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        stepRef.current(e.key === 'ArrowLeft' ? -1 : 1);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [desktop]);
+
+  // Phones: a sideways swipe on the sheet steps to the card before / after
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    swipeStart.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) step(dx < 0 ? 1 : -1);
   };
 
   return (
@@ -451,13 +519,18 @@ export default function CardBrowser({
         </Box>
       </Box>
 
-      {/* Phones: card info slides up from the bottom */}
-      <Drawer
+      {/* Phones: card info slides up from the bottom; drag it down to close, swipe sideways or use
+          the arrows beside the card for the card before / after */}
+      <SwipeableDrawer
         anchor="bottom"
         open={!desktop && sheetOpen}
+        onOpen={() => setSheetOpen(true)}
         onClose={() => setSheetOpen(false)}
+        disableSwipeToOpen
         slotProps={{ paper: { sx: { bgcolor: dmf.bg, backgroundImage: 'none', maxHeight: '88vh', p: 2.5, pt: 3 } } }}
       >
+        {/* Drag handle */}
+        <Box aria-hidden sx={{ position: 'absolute', top: 8, left: '50%', ml: '-20px', width: 40, height: 4, borderRadius: 2, bgcolor: 'rgba(232,238,247,0.3)' }} />
         {/* Close button level with the top of the card (pt 3 = the card → text gap) */}
         <IconButton
           aria-label="Close card"
@@ -466,10 +539,29 @@ export default function CardBrowser({
         >
           <CloseIcon />
         </IconButton>
-        <Box sx={{ height: '75vh' }}>
+        <Box sx={{ position: 'relative', height: '75vh' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <CardInfo card={selected?.card ?? null} images={images} texts={texts} dragScroll />
+          {/* Previous / next, level with the middle of the card image (40% of the height after the 24px gap) */}
+          {([-1, 1] as const).map((dir) => (
+            <IconButton
+              key={dir}
+              aria-label={dir < 0 ? 'Previous card' : 'Next card'}
+              disabled={!neighbour(dir)}
+              onClick={() => step(dir)}
+              sx={{
+                position: 'absolute',
+                top: 'calc((100% - 24px) * 0.2)',
+                [dir < 0 ? 'left' : 'right']: -8,
+                transform: 'translateY(-50%)',
+                color: dmf.text,
+                '&.Mui-disabled': { color: 'rgba(232,238,247,0.2)' },
+              }}
+            >
+              {dir < 0 ? <ChevronLeftIcon fontSize="large" /> : <ChevronRightIcon fontSize="large" />}
+            </IconButton>
+          ))}
         </Box>
-      </Drawer>
+      </SwipeableDrawer>
     </>
   );
 }
