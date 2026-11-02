@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import { keyframes } from '@emotion/react';
 import { dmf, easeOut } from '@/theme';
 import { BASE_PATH } from '@/lib/basePath';
-import { patternBg } from './Decor';
+import { pageBg } from './Decor';
 
 /**
  * Loading screen with fade transitions. It covers the page but not the header.
@@ -115,7 +115,7 @@ export default function LoadingScreen({ children }: { children: React.ReactNode 
         role="status"
         aria-label="Loading"
         sx={{
-          ...patternBg,
+          ...pageBg,
           position: 'fixed',
           inset: 0,
           // Under the header (AppBar is 1100), over everything else: the header stays visible and clickable
@@ -126,7 +126,6 @@ export default function LoadingScreen({ children }: { children: React.ReactNode 
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: dmf.bgDeep,
-          backgroundImage: `${patternBg.backgroundImage}, radial-gradient(500px 360px at 50% 50%, rgba(56,200,255,0.12), transparent 70%)`,
           opacity: visible ? 1 : 0,
           visibility: visible ? 'visible' : 'hidden',
           pointerEvents: visible ? 'auto' : 'none',

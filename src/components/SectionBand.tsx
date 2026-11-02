@@ -5,7 +5,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import { dmf, easeOut } from '@/theme';
-import { Title, PixelEdge, patternBg } from './Decor';
+import { Title, PixelEdge, pageBg } from './Decor';
 import Markdown from './Markdown';
 
 export type BandVariant = 'pattern' | 'surface' | 'ice';
@@ -16,18 +16,11 @@ export const bandColor: Record<BandVariant, string> = {
   ice: dmf.ice,
 };
 
+/** Flat fields of colour; the bands are told apart by their colour alone. */
 const backgrounds: Record<BandVariant, object> = {
-  pattern: patternBg,
-  surface: {
-    backgroundColor: dmf.surface,
-    backgroundImage: 'radial-gradient(800px 400px at 0% 100%, rgba(255,138,61,0.06), transparent 70%)',
-  },
-  ice: {
-    backgroundColor: dmf.ice,
-    backgroundImage: `linear-gradient(180deg, #5ad6ff 0%, #1f9fe0 100%),
-      repeating-linear-gradient(135deg, rgba(10,22,40,0.06) 0 2px, transparent 2px 22px)`,
-    backgroundBlendMode: 'multiply',
-  },
+  pattern: pageBg,
+  surface: { backgroundColor: dmf.surface },
+  ice: { backgroundColor: dmf.ice },
 };
 
 /** Fade/slide in once the band scrolls into view. */
@@ -83,7 +76,8 @@ export default function SectionBand({
         position: 'relative',
         overflow: 'clip',
         scrollMarginTop: 72,
-        py: { xs: ice ? 12 : 9, md: ice ? 16 : 13 },
+        // Same space in every band, so the rhythm down the page is even
+        py: { xs: 10, md: 14 },
         ...backgrounds[variant],
       }}
     >

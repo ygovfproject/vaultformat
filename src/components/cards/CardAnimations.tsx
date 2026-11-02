@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Card animations: FlipFan (Main page hero) and ShuffleStack (404 page).
- * Both take a pool of card image URLs and cycle through them.
+ * Card animations: FlipFan (Main page hero) and ShuffleStack (404 page) take a pool of card image
+ * URLs and cycle through them; FaceDownCards (empty states, 500 page) needs no card images.
  */
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
@@ -37,6 +37,36 @@ function CardImg({ src, style }: { src: string; style?: CSSProperties }) {
       style={style}
       sx={{ display: 'block', width: '100%', height: 'auto', aspectRatio: RATIO, objectFit: 'cover', borderRadius: RADIUS, userSelect: 'none' }}
     />
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Face-down cards - two card backs; the front one slowly bobs and     */
+/*    tilts, like a deck being shuffled. Only uses the site's own      */
+/*    card back, so it works with the file server down.                */
+/* ------------------------------------------------------------------ */
+
+const bob = keyframes`
+  0%, 100% { transform: translate(0, 0) rotate(-6deg); }
+  50% { transform: translate(6%, -6%) rotate(3deg); }
+`;
+
+/** `width` is one card's width in px; the pair takes about 1.3× that by 1.6×. */
+export function FaceDownCards({ width = 74 }: { width?: number }) {
+  const card = {
+    position: 'absolute',
+    width,
+    aspectRatio: RATIO,
+    borderRadius: RADIUS,
+    backgroundImage: `url(${BACK})`,
+    backgroundSize: 'cover',
+    boxShadow: '0 10px 24px rgba(0,0,0,0.55)',
+  } as const;
+  return (
+    <Box aria-hidden sx={{ position: 'relative', width: width * 1.3, height: width * 1.62 }}>
+      <Box sx={{ ...card, left: '4%', top: '8%', transform: 'rotate(8deg)', opacity: 0.6 }} />
+      <Box sx={{ ...card, left: '15%', top: '3%', transform: 'rotate(-6deg)', animation: `${bob} 3.2s ease-in-out infinite` }} />
+    </Box>
   );
 }
 

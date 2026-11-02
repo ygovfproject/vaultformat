@@ -6,7 +6,7 @@ import Collapse from '@mui/material/Collapse';
 import Typography from '@mui/material/Typography';
 import ButtonBase from '@mui/material/ButtonBase';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { dmf, fonts, size } from '@/theme';
+import { canHover, dmf, fonts, size } from '@/theme';
 import type { Update } from '@/lib/content';
 import Markdown from '../Markdown';
 
@@ -57,8 +57,6 @@ function UpdateEntry({ update, latest = false }: { update: Update; latest?: bool
               fontFamily: fonts.display,
               fontSize: size.small,
               fontWeight: 700,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
               color: dmf.ink,
               bgcolor: dmf.orange,
             }}
@@ -79,58 +77,56 @@ function UpdateEntry({ update, latest = false }: { update: Update; latest?: bool
   );
 }
 
-/** Changelog: only the newest update is shown until the user expands the list. */
+/**
+ * Changelog: only the newest update is shown until the user expands the list. Desktop: heading on
+ * the left, the updates on the right (like the Main page's sections).
+ */
 export default function UpdatesSection({ updates }: { updates: Update[] }) {
   const [open, setOpen] = useState(false);
   if (updates.length === 0) return null;
   const [latest, ...older] = updates;
 
   return (
-    <Box
-      sx={{
-        border: '1px solid rgba(56,200,255,0.18)',
-        bgcolor: 'rgba(6,14,28,0.6)',
-        p: { xs: 3, md: 5 },
-        pb: { xs: 1, md: 2 },
-      }}
-    >
-      <Typography component="h2" sx={{ fontFamily: fonts.display, fontWeight: 700, fontSize: size.sub, color: dmf.text, mb: 3 }}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '5fr 7fr' }, columnGap: 8 }}>
+      <Typography component="h2" variant="h2" sx={{ color: dmf.text, fontSize: { xs: '2rem', md: '2.4rem' }, mb: 4 }}>
         Updates
       </Typography>
 
-      <UpdateEntry update={latest} latest />
+      <Box>
+        <UpdateEntry update={latest} latest />
 
-      {older.length > 0 && (
-        <>
-          <Collapse in={open} unmountOnExit>
-            {older.map((u) => (
-              <UpdateEntry key={u.id} update={u} />
-            ))}
-          </Collapse>
-          <ButtonBase
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            sx={{
-              mb: 3,
-              gap: 1,
-              px: 2,
-              py: 1,
-              fontFamily: fonts.display,
-              fontWeight: 700,
-              fontSize: size.ui,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: dmf.ice,
-              border: '1px solid rgba(56,200,255,0.35)',
-              transition: 'background-color 150ms, border-color 150ms',
-              '&:hover': { bgcolor: 'rgba(56,200,255,0.08)', borderColor: dmf.ice },
-            }}
-          >
-            {open ? 'Hide older updates' : `Show all updates (${updates.length})`}
-            <ExpandMoreIcon fontSize="small" sx={{ transition: 'transform 200ms', transform: open ? 'rotate(180deg)' : 'none' }} />
-          </ButtonBase>
-        </>
-      )}
+        {older.length > 0 && (
+          <>
+            <Collapse in={open} unmountOnExit>
+              {older.map((u) => (
+                <UpdateEntry key={u.id} update={u} />
+              ))}
+            </Collapse>
+            <ButtonBase
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              sx={{
+                mb: 3,
+                gap: 1,
+                px: 2,
+                py: 1,
+                fontFamily: fonts.display,
+                fontWeight: 700,
+                fontSize: size.ui,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: dmf.ice,
+                bgcolor: 'rgba(56,200,255,0.1)',
+                transition: 'background-color 150ms',
+                [canHover]: { '&:hover': { bgcolor: 'rgba(56,200,255,0.2)' } },
+              }}
+            >
+              {open ? 'Hide older updates' : `Show all updates (${updates.length})`}
+              <ExpandMoreIcon fontSize="small" sx={{ transition: 'transform 200ms', transform: open ? 'rotate(180deg)' : 'none' }} />
+            </ButtonBase>
+          </>
+        )}
+      </Box>
     </Box>
   );
 }

@@ -58,15 +58,12 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
         position: 'relative',
         p: '2px',
         clipPath: CLIP,
-        background: 'linear-gradient(160deg, rgba(56,200,255,0.55), rgba(56,200,255,0.1) 45%, rgba(56,200,255,0.4))',
+        bgcolor: 'rgba(56,200,255,0.35)',
         transform: 'translateY(0)',
-        transition: `transform 250ms ${easeOut}, background 250ms ${easeOut}`,
+        transition: `transform 250ms ${easeOut}, background-color 250ms ${easeOut}`,
         willChange: 'transform',
         [canHover]: {
-          '&:hover': {
-            transform: 'translateY(-6px)',
-            background: `linear-gradient(160deg, ${dmf.orange}, rgba(255,138,61,0.25) 45%, ${dmf.ice})`,
-          },
+          '&:hover': { transform: 'translateY(-6px)', bgcolor: dmf.orange },
           '&:hover .deck-art': { transform: 'scale(1.07)' },
           '&:hover .deck-shade': { opacity: 0.75 },
           '&:hover .deck-sheen': { animation: `${sweep} 1100ms ease forwards` },
@@ -168,7 +165,6 @@ function DeckTile({ deck, now }: { deck: Deck; now: number | null }) {
               fontSize: { xs: '1.05rem', md: size.sub },
               lineHeight: 1.05,
               color: dmf.text,
-              textShadow: '0 2px 8px rgba(0,0,0,0.8)',
               transition: 'color 150ms',
             }}
           >

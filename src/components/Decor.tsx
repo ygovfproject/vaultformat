@@ -6,12 +6,8 @@ import Box from '@mui/material/Box';
 import Typography, { type TypographyProps } from '@mui/material/Typography';
 import { canHover, dmf, easeOut, fonts, size } from '@/theme';
 
-/** Subtle diagonal-line texture used on dark bands. */
-export const patternBg = {
-  backgroundColor: dmf.bg,
-  backgroundImage: `repeating-linear-gradient(135deg, rgba(56,200,255,0.035) 0 2px, transparent 2px 22px),
-    radial-gradient(900px 400px at 85% 0%, rgba(56,200,255,0.08), transparent 70%)`,
-};
+/** Page background: flat navy (the Main page hero is the only textured surface). */
+export const pageBg = { backgroundColor: dmf.bg };
 
 /** Page and section heading: display type in solid text colour (the gradient is the logo's alone). */
 export function Title({ sx, component = 'h2', ...props }: TypographyProps & { component?: React.ElementType }) {

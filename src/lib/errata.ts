@@ -1,6 +1,6 @@
 import { getContentText, readDecksJson } from './content';
 import { parseYdk } from './decklist';
-import { cardImageUrl, cardText, fetchText, isCustomCard, isErratum } from './fileServer';
+import { cardData, cardImageUrl, fetchText, isCustomCard, isErratum } from './fileServer';
 
 export type ErrataData = {
   /** Intro text from content/errata.md ('' if missing) */
@@ -24,7 +24,7 @@ async function errataFromDecks(): Promise<string[]> {
     for (const id of [...main, ...extra, ...side]) if (isCustomCard(id)) cards.add(id);
   }
   const custom = [...cards];
-  const texts = await Promise.all(custom.map((id) => cardText(id).catch(() => '')));
+  const texts = await Promise.all(custom.map((id) => cardData(id).then((d) => d?.desc ?? '', () => '')));
   return custom.filter((id, i) => isErratum(id, texts[i]));
 }
 

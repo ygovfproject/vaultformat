@@ -93,13 +93,14 @@ export default function NavBar() {
     <AppBar
       position="sticky"
       elevation={0}
-      sx={{ bgcolor: dmf.header, borderBottom: `1px solid rgba(255,255,255,0.06)`, backgroundImage: 'none' }}
+      sx={{ bgcolor: dmf.header, backgroundImage: 'none' }}
     >
       <Container maxWidth="lg">
         <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 72 } }}>
           <Logo />
 
-          <Box component="nav" sx={{ display: { xs: 'none', sm: 'flex' }, gap: 0.5 }}>
+          {/* mr: the last link's text ends on the page's right edge, not its padding */}
+          <Box component="nav" sx={{ display: { xs: 'none', sm: 'flex' }, gap: 0.5, mr: -2 }}>
             {NAV_ITEMS.map((item) => (
               <Box key={item.href} component={NextLink} href={item.href} sx={linkSx(isActive(pathname, item.href))}>
                 {item.label}

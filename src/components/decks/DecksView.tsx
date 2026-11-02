@@ -4,25 +4,25 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import { dmf } from '@/theme';
 import type { Deck, Update } from '@/lib/content';
-import { GlitchDivider, Subtitle, Title, patternBg } from '../Decor';
+import { GlitchDivider, Subtitle, Title, pageBg } from '../Decor';
 import { PAGE_MAX_WIDTH, PAGE_PB, PAGE_PT, PAGE_TITLE_SIZE } from '../PageShell';
 import UpdatesSection from './UpdatesSection';
 import DeckGrid from './DeckGrid';
 import ComingSoon from '../ComingSoon';
 
+/** Decks page: the deck grid right under the title (it's what visitors come for), the changelog below it. */
 export default function DecksView({ decks, updates }: { decks: Deck[]; updates: Update[] }) {
   return (
     <>
-      {/* Header + updates */}
+      {/* Header + deck grid */}
       <Box
         component="section"
         sx={{
-          ...patternBg,
+          ...pageBg,
           pt: PAGE_PT,
-          pb: decks.length ? { xs: 6, md: 8 } : PAGE_PB,
+          pb: PAGE_PB,
           // With no decks this is the whole page, so it fills the screen
           minHeight: decks.length ? undefined : 'calc(100vh - 72px)',
-          backgroundImage: `${patternBg.backgroundImage}, radial-gradient(600px 300px at 10% 100%, rgba(255,138,61,0.1), transparent 70%)`,
         }}
       >
         <Container maxWidth={PAGE_MAX_WIDTH}>
@@ -30,26 +30,26 @@ export default function DecksView({ decks, updates }: { decks: Deck[]; updates: 
             Decks
           </Title>
           <GlitchDivider />
-          {decks.length > 0 && (
-            <Subtitle>
-              The Vault Format pool: {decks.length} premade {decks.length === 1 ? 'deck' : 'decks'}. Pick one and play it as it is.
-            </Subtitle>
-          )}
           {decks.length === 0 ? (
             <ComingSoon title="Still shuffling" text="The first Vault Format decks are on the testing table, duel after duel, until every one of them can beat every other. They join the pool soon." />
           ) : (
-            <Box sx={{ mt: 5 }}>
-              <UpdatesSection updates={updates} />
-            </Box>
+            <>
+              <Subtitle>
+                The Vault Format pool: {decks.length} premade {decks.length === 1 ? 'deck' : 'decks'}. Pick one and play it as it is.
+              </Subtitle>
+              <Box sx={{ mt: { xs: 4, md: 5 } }}>
+                <DeckGrid decks={decks} />
+              </Box>
+            </>
           )}
         </Container>
       </Box>
 
-      {/* Deck grid */}
-      {decks.length > 0 && (
-        <Box component="section" sx={{ bgcolor: dmf.surface, pt: { xs: 7, md: 10 }, pb: PAGE_PB }}>
+      {/* Updates */}
+      {decks.length > 0 && updates.length > 0 && (
+        <Box component="section" sx={{ bgcolor: dmf.surface, pt: { xs: 8, md: 12 }, pb: PAGE_PB }}>
           <Container maxWidth={PAGE_MAX_WIDTH}>
-            <DeckGrid decks={decks} />
+            <UpdatesSection updates={updates} />
           </Container>
         </Box>
       )}

@@ -3,7 +3,7 @@
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { patternBg } from './Decor';
+import { pageBg } from './Decor';
 
 /**
  * Shared page frame: same width as the header/footer, same space below the header and
@@ -17,7 +17,7 @@ export const PAGE_TITLE_SIZE = { xs: '2.75rem', md: '4.5rem' };
 
 export default function PageShell({ children, sx }: { children: React.ReactNode; sx?: SxProps<Theme> }) {
   return (
-    <Box sx={[{ ...patternBg, minHeight: 'calc(100vh - 72px)', pt: PAGE_PT, pb: PAGE_PB }, ...(Array.isArray(sx) ? sx : [sx])]}>
+    <Box sx={[{ ...pageBg, minHeight: 'calc(100vh - 72px)', pt: PAGE_PT, pb: PAGE_PB }, ...(Array.isArray(sx) ? sx : [sx])]}>
       <Container maxWidth={PAGE_MAX_WIDTH}>{children}</Container>
     </Box>
   );

@@ -59,6 +59,8 @@ export default function RulingsView({ markdown }: { markdown: string }) {
   const ids = useMemo(() => page.sections.map((s) => s.id), [page]);
   const active = useActiveSection(ids);
   const version = useMemo(() => rulesVersion(markdown), [markdown]);
+  // The "Version 1.2" line is shown on the download button instead (the PDF keeps it)
+  const intro = useMemo(() => page.intro.replace(/^[ \t]*version\s*:?\s*v?\d[\w.-]*[ \t]*$/gim, '').trim(), [page]);
 
   return (
     <PageShell>
@@ -67,9 +69,9 @@ export default function RulingsView({ markdown }: { markdown: string }) {
         </Title>
         <GlitchDivider />
 
-        {page.intro && (
+        {intro && (
           <Box sx={{ mb: 2 }}>
-            <Markdown>{page.intro}</Markdown>
+            <Markdown>{intro}</Markdown>
           </Box>
         )}
 
@@ -81,14 +83,24 @@ export default function RulingsView({ markdown }: { markdown: string }) {
           </Box>
         )}
 
-        {page.sections.length === 0 && !page.intro && (
+        {page.sections.length === 0 && !intro && (
           <Typography sx={{ color: dmf.text }}>No rulings yet.</Typography>
         )}
 
         {page.sections.length > 0 && (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '240px 1fr' }, gap: { xs: 2, md: 6 }, alignItems: 'start', mt: 4 }}>
-            {/* Table of contents */}
-            <Box component="nav" aria-label="Rulings sections" sx={{ display: { xs: 'none', md: 'block' }, position: 'sticky', top: 96 }}>
+            {/* Table of contents: sticks beside the rules on desktop; a block before them on phones */}
+            <Box
+              component="nav"
+              aria-label="Rulings sections"
+              sx={{
+                position: { md: 'sticky' },
+                top: { md: 96 },
+                bgcolor: { xs: dmf.surface, md: 'transparent' },
+                p: { xs: 2.5, md: 0 },
+                mb: { xs: 4, md: 0 },
+              }}
+            >
               <Typography component="h2" sx={{ fontFamily: fonts.display, fontWeight: 700, fontSize: size.text, color: dmf.text, mb: 1.5 }}>
                 Contents
               </Typography>
@@ -124,16 +136,16 @@ export default function RulingsView({ markdown }: { markdown: string }) {
 
             {/* Sections */}
             <Box sx={{ minWidth: 0 }}>
-              {page.sections.map((s, i) => (
+              {page.sections.map((s) => (
                 <Box
                   key={s.id}
                   component="section"
                   id={s.id}
                   sx={{
                     scrollMarginTop: 90,
-                    pb: { xs: 5, md: 6 },
-                    mb: { xs: 5, md: 6 },
-                    borderBottom: i < page.sections.length - 1 ? '1px solid rgba(56,200,255,0.12)' : 'none',
+                    // Sections are set apart by space alone
+                    mb: { xs: 8, md: 10 },
+                    '&:last-of-type': { mb: 0 },
                   }}
                 >
                   <Title variant="h2" component="h2" sx={{ fontSize: { xs: '1.9rem', md: '2.4rem' }, mb: 3 }}>

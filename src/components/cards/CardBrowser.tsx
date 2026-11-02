@@ -9,7 +9,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { canHover, dmf, easeOut, fonts, size } from '@/theme';
-import { cardText, isErratum, withoutErratumLine } from '@/lib/fileServer';
+import { cardData, isErratum, withoutErratumLine, type CardData } from '@/lib/fileServer';
 import ScrollArea from './ScrollArea';
 
 /**
@@ -70,7 +70,10 @@ function usePanelHeight(enabled: boolean) {
  * Vault Format errata (modified versions of official cards): custom cards (900000000–900009999)
  * whose text has the "~Vault Format erratum~" line. Known once the card's text has loaded.
  */
-const isErrata = (card: string, texts: Texts) => isErratum(card, texts[card]);
+const isErrata = (card: string, texts: Texts) => isErratum(card, texts[card]?.desc);
+
+/** The card's name once its data has loaded, its id until then. */
+const cardName = (card: string, texts: Texts) => texts[card]?.name ?? `Card ${card}`;
 
 /** Small "E" (erratum) tag shown on erratum cards in the grid. */
 function ErrataTag() {
@@ -116,11 +119,51 @@ function CardText({ text }: { text: string }) {
     <>
       {parts.map((lines, i) => (
         <Box key={i}>
-          {i > 0 && <Box role="separator" sx={{ my: 1.5, height: '1px', background: `linear-gradient(90deg, ${dmf.ice}99, ${dmf.ice}22)` }} />}
+          {i > 0 && <Box role="separator" sx={{ my: 1.5, height: 2, bgcolor: 'rgba(56,200,255,0.3)' }} />}
           <Typography sx={{ whiteSpace: 'pre-line', fontSize: size.text, lineHeight: 1.65, color: dmf.text }}>{lines.join('\n').trim()}</Typography>
         </Box>
       ))}
     </>
+  );
+}
+
+/** A score as printed: "?" for the unknown ones (stored as a negative number). */
+const score = (v: number | undefined) => (v === undefined ? null : v < 0 ? '?' : String(v));
+
+/**
+ * The top of the card text: name, then "LIGHT · Level 4" (monsters) or "Continuous Trap" (Spells
+ * and Traps), the monster's types and its ATK / DEF.
+ */
+function CardHeader({ data }: { data: CardData }) {
+  const types = data.typeline ?? [];
+  const monster = data.type === 'Monster' || types.length > 0;
+  const kind: string[] = [];
+  if (monster) {
+    if (data.attribute) kind.push(data.attribute);
+    if (data.linkval !== undefined) kind.push(`Link ${data.linkval}`);
+    else if (data.rank !== undefined) kind.push(`Rank ${data.rank}`);
+    else if (data.level !== undefined) kind.push(`${types.includes('Xyz') ? 'Rank' : 'Level'} ${data.level}`);
+    if (data.scale !== undefined) kind.push(`Scale ${data.scale}`);
+  } else if (data.type) {
+    kind.push(data.property ? `${data.property} ${data.type}` : data.type);
+  }
+  const atk = score(data.atk);
+  const def = score(data.def);
+  const scores = [atk && `ATK ${atk}`, def && `DEF ${def}`].filter(Boolean).join(' · ');
+  const line = { fontFamily: fonts.display, fontWeight: 600, fontSize: size.ui, lineHeight: 1.5 };
+
+  return (
+    <Box>
+      {data.name && (
+        <Typography component="h3" sx={{ fontFamily: fonts.display, fontWeight: 700, fontSize: '1.125rem', lineHeight: 1.25, color: dmf.text, mb: 0.75 }}>
+          {data.name}
+        </Typography>
+      )}
+      {kind.length > 0 && <Typography sx={{ ...line, color: dmf.ice }}>{kind.join(' · ')}</Typography>}
+      {types.length > 0 && <Typography sx={{ ...line, color: dmf.textMuted }}>{types.join(' / ')}</Typography>}
+      {scores && <Typography sx={{ ...line, color: dmf.text }}>{scores}</Typography>}
+      <Box role="separator" sx={{ my: 1.5, height: 2, bgcolor: 'rgba(56,200,255,0.3)' }} />
+    </Box>
   );
 }
 
@@ -179,8 +222,8 @@ function CardImage({ src, alt, eager = false }: { src: string | null; alt: strin
   );
 }
 
-/** Card texts: undefined while loading, '' if there's none. */
-type Texts = Record<string, string | undefined>;
+/** Card data (name, stats, text): undefined while loading, null if there's none. */
+type Texts = Record<string, CardData | null | undefined>;
 type Lookup = { images: Record<string, string | null>; texts: Texts };
 
 /** Parallel requests when loading card texts. */
@@ -199,8 +242,8 @@ function useCardTexts(ids: string[]): Texts {
     setTexts({});
     const worker = async () => {
       for (let id = queue.shift(); id !== undefined && alive; id = queue.shift()) {
-        const text = await cardText(id).catch(() => '');
-        if (alive) setTexts((t) => ({ ...t, [id]: text }));
+        const data = await cardData(id).catch(() => null);
+        if (alive) setTexts((t) => ({ ...t, [id]: data }));
       }
     };
     for (let i = 0; i < TEXT_REQUESTS; i++) void worker();
@@ -221,32 +264,37 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
       </Typography>
     );
   }
-  const text = texts[card];
+  const data = texts[card];
+  const note = (text: string) => <Typography sx={{ fontSize: size.text, color: dmf.textMuted, fontStyle: 'italic' }}>{text}</Typography>;
   const textBody = (
     <>
       {isErrata(card, texts) && <ErrataBanner />}
-      {text === undefined ? (
-        <Typography sx={{ fontSize: size.text, color: dmf.textMuted, fontStyle: 'italic' }}>Loading card text…</Typography>
-      ) : text ? (
-        <CardText text={withoutErratumLine(text)} />
+      {data === undefined ? (
+        note('Loading card text…')
+      ) : data ? (
+        <>
+          <CardHeader data={data} />
+          {data.desc ? <CardText text={withoutErratumLine(data.desc)} /> : note('No card text.')}
+        </>
       ) : (
-        <Typography sx={{ fontSize: size.text, color: dmf.textMuted, fontStyle: 'italic' }}>No card text.</Typography>
+        note('No card text.')
       )}
     </>
   );
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      <Box
-        sx={{
-          flexShrink: 0,
-          width: '100%',
-          maxWidth: dragScroll ? 198 : 220, // phones: 10% smaller, the text box gets the height
-          mx: 'auto',
-          mt: dragScroll ? 0 : 2, // phones: the sheet's top padding matches the card → text gap
-          filter: `drop-shadow(0 14px 24px rgba(0,0,0,0.55)) drop-shadow(0 0 20px ${dmf.ice}22)`,
-        }}
-      >
-        <CardImage src={images[card] ?? null} alt={`Card ${card}`} eager />
+      {/* Card image and text box share the panel's height 40 : 60 (after the 24px gap between
+          them); the image's width follows from the card's shape */}
+      <Box sx={{ flex: '0 0 calc((100% - 24px) * 0.4)', minHeight: 0, display: 'flex', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            height: '100%',
+            aspectRatio: CARD_RATIO,
+            filter: `drop-shadow(0 14px 24px rgba(0,0,0,0.55)) drop-shadow(0 0 20px ${dmf.ice}22)`,
+          }}
+        >
+          <CardImage src={images[card] ?? null} alt={cardName(card, texts)} eager />
+        </Box>
       </Box>
       <Box
         sx={{
@@ -255,8 +303,7 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
           minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
-          border: '1px solid rgba(56,200,255,0.18)',
-          bgcolor: 'rgba(6,14,28,0.6)',
+          bgcolor: dmf.surface,
         }}
       >
         {/* key={card}: a new card gets a fresh text box, so its scroll starts at the top */}
@@ -306,7 +353,7 @@ function Section({
 }) {
   const { key, label, cards } = section;
   return (
-    <Box component="section" ref={sectionRef} sx={{ border: '1px solid rgba(56,200,255,0.18)', bgcolor: 'rgba(6,14,28,0.55)', p: { xs: 1.5, md: 2.5 } }}>
+    <Box component="section" ref={sectionRef} sx={{ bgcolor: dmf.surface, p: { xs: 1.5, md: 2.5 } }}>
       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 2 }}>
         <Typography component="h2" sx={{ fontFamily: fonts.display, fontWeight: 700, textTransform: 'uppercase', fontSize: { xs: '1.1rem', md: size.sub }, color: dmf.text }}>
           {label}
@@ -328,7 +375,7 @@ function Section({
                 component="button"
                 type="button"
                 onClick={() => onSelect({ section: key, index, card })}
-                aria-label={`Show card ${card}${isErrata(card, texts) ? ' (Vault Format erratum)' : ''}`}
+                aria-label={`Show ${cardName(card, texts)}${isErrata(card, texts) ? ' (Vault Format erratum)' : ''}`}
                 aria-pressed={active}
                 sx={{
                   p: 0,
@@ -348,7 +395,7 @@ function Section({
                   '&:focus-visible': { outline: `3px solid ${dmf.ice}` },
                 }}
               >
-                <CardImage src={images[card] ?? null} alt={`Card ${card}`} />
+                <CardImage src={images[card] ?? null} alt={cardName(card, texts)} />
                 {errataTags && isErrata(card, texts) && <ErrataTag />}
               </Box>
             );

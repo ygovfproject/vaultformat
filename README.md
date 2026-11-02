@@ -35,7 +35,7 @@ npm run preview    # serve out/ on http://localhost:4173
 | Main page / Rules / Errata intro | `content/philosophy.md`, `content/rulings.md`, `content/errata.md` |
 | Decks and updates | `content/decks.json`, `content/updates.json`, `content/updates/<id>.md` |
 | Deck lists | `decks/<deck_id>.ydk` |
-| Card images and texts | `cards/<card_id>.jpg`, `card_texts/<card_id>.txt` |
+| Card images and data | `cards/<card_id>.jpg`, `card_texts/<card_id>.json` |
 | Deck covers | `covers/<card_id>.jpg`, `covers/crops/<deck>--<card>-<x>-<y>-<size>.jpg` |
 
 The file server must allow other sites to read these files (CORS); `dmf_admin` does. Cards with ids `900000000`-`900009999` are **Vault Format errata**; the Errata page lists every one used in a deck.
@@ -56,7 +56,12 @@ Pages with nothing to show yet say so instead of showing an empty page: Decks an
 - `# Title`, an intro, then one `## n. Section` per section (shown in the Contents list)
 - rules start with a bold number, `**2.5** ...`; any `§2.5` or `§6` in the text becomes a link to that rule or section
 
-**Card texts (`card_texts/<card_id>.txt`):** a line of only dashes (`---`) is shown as a divider, e.g. between a Spellform card's spell and monster effects.
+**Card data (`card_texts/<card_id>.json`):** shown above the card text in the card panel.
+
+- all cards: `id`, `name`, `type` (`Monster`, `Spell`, `Trap`), `desc` (the card text)
+- monsters: `attribute`, `level` (`rank` for Xyz monsters), `typeline` (e.g. `["Reptile", "Tuner", "Effect"]`), `atk`, `def`; Link monsters have `linkval` instead of `def`, Pendulums also `scale`; a negative ATK/DEF shows as `?`
+- Spells and Traps: `property` (`Normal`, `Continuous`, `Quick-Play`, ...)
+- in `desc`, a line of only dashes (`---`) is shown as a divider, e.g. between a Spellform card's spell and monster effects; errata keep their `~Vault Format erratum~` line there
 
 **Rules PDF:** the Rulings page's **Download rules** button turns `rulings.md` into a PDF in the browser, named `Vault_Format_rules_<version>.pdf` from the `Version 1.0` line. Change that line when the rules change.
 

@@ -71,9 +71,31 @@ export function cardImageUrl(id: string): string {
   return fileUrl(`cards/${id}.jpg`);
 }
 
-/** Card text (card_texts/<id>.txt), '' if missing. Errata texts still have their "~Vault Format erratum~" line. */
-export async function cardText(id: string): Promise<string> {
-  return ((await fetchText(`card_texts/${id}.txt`)) ?? '').trim();
+/**
+ * A card's data (card_texts/<id>.json). Monsters have attribute, level (rank for Xyz monsters),
+ * typeline, atk and def (linkval instead of def for Link monsters, scale for Pendulums); Spells and
+ * Traps have property ("Normal", "Continuous", ...). Errata texts still have their
+ * "~Vault Format erratum~" line in `desc`.
+ */
+export type CardData = {
+  id: string;
+  name?: string;
+  type?: string;
+  attribute?: string;
+  level?: number;
+  rank?: number;
+  linkval?: number;
+  scale?: number;
+  typeline?: string[];
+  atk?: number;
+  def?: number;
+  property?: string;
+  desc?: string;
+};
+
+/** Card data (card_texts/<id>.json), null if missing. */
+export function cardData(id: string): Promise<CardData | null> {
+  return fetchJson<CardData>(`card_texts/${id}.json`);
 }
 
 /** Custom card ids: 900000000–900009999. */

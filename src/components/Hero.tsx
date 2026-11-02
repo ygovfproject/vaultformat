@@ -1,11 +1,12 @@
 "use client";
 
+import NextLink from "next/link";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { keyframes } from "@emotion/react";
-import { dmf, easeOut, fonts } from "@/theme";
+import { canHover, dmf, easeOut, fonts, size } from "@/theme";
 import { Title, NotchButton, PixelEdge } from "./Decor";
 import Markdown from "./Markdown";
 import { FlipFan } from "./cards/CardAnimations";
@@ -34,7 +35,7 @@ export default function Hero({
         minHeight: { xs: "calc(100vh - 64px)", md: "calc(100vh - 72px)" },
         display: "flex",
         alignItems: "center",
-        py: { xs: 10, md: 12 },
+        py: { xs: 7, md: 12 },
         bgcolor: dmf.bgDeep,
         backgroundImage: `
           radial-gradient(max(320px, 48vw) max(230px, 34vw) at 80% 40%, rgba(56,200,255,0.18), transparent 70%),
@@ -44,30 +45,11 @@ export default function Hero({
         backgroundSize: "auto, auto, 48px 48px, 48px 48px",
       }}
     >
-      {/* Giant watermark */}
-      <Typography
-        aria-hidden
-        sx={{
-          position: "absolute",
-          right: "-2vw",
-          bottom: "-6vw",
-          fontFamily: fonts.display,
-          fontWeight: 700,
-          fontSize: "32vw",
-          lineHeight: 1,
-          color: "transparent",
-          WebkitTextStroke: "1px rgba(56,200,255,0.08)",
-          userSelect: "none",
-          pointerEvents: "none",
-        }}
-      >
-        VAULT
-      </Typography>
-
       <Container maxWidth="lg" sx={{ position: "relative" }}>
+        {/* Phones: the cards above the text; desktop: text left, cards right */}
         <Stack
-          direction="row"
-          sx={{ alignItems: "center", justifyContent: "space-between", gap: 6 }}
+          direction={{ xs: "column-reverse", md: "row" }}
+          sx={{ alignItems: { xs: "flex-start", md: "center" }, justifyContent: "space-between", gap: { xs: 4, md: 6 } }}
         >
           <Box sx={{ maxWidth: 680, animation: `${rise} 500ms ${easeOut} both` }}>
             <Title
@@ -85,18 +67,47 @@ export default function Hero({
                 <Markdown>{intro}</Markdown>
               </Box>
             )}
-            {/* Both buttons as wide as the wider one: side by side, or stacked on phones */}
-            <Box sx={{ display: "inline-grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2.5 }}>
+            {/* One main action; the rules are a plain link next to it */}
+            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", columnGap: 4, rowGap: 2 }}>
               <NotchButton href="/decks">Browse Decks</NotchButton>
-              <NotchButton href="/rulings" variant="ghost">
-                Read Rulings
-              </NotchButton>
+              <Box
+                component={NextLink}
+                href="/rulings"
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 1,
+                  py: 1,
+                  fontFamily: fonts.display,
+                  fontWeight: 700,
+                  fontSize: size.ui,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  color: dmf.orange,
+                  textDecoration: "none",
+                  "& svg": { transition: `transform 150ms ${easeOut}` },
+                  [canHover]: { "&:hover svg": { transform: "translateX(4px)" } },
+                }}
+              >
+                Read the rules <ArrowForwardIcon fontSize="small" />
+              </Box>
             </Box>
           </Box>
-          {/* Click-to-flip cards (desktop only). Shown face-down while the card list loads, flipped up
-              once it and the images are in; left out when there are no cards at all (no decks). */}
+          {/* Click-to-flip cards: full size on desktop, half size on phones. Shown face-down while
+              the card list loads, flipped up once it and the images are in; left out when there are
+              no cards at all (no decks). The fan's rotated right card reaches past its box, hence
+              the right margin, so it stays inside the page's edge. */}
           {(cards === null || cards.length > 0) && (
-            <Box sx={{ display: { xs: "none", md: "block" }, flexShrink: 0 }}>
+            <Box
+              sx={{
+                flexShrink: 0,
+                alignSelf: { xs: "center", md: "auto" },
+                width: { xs: 235, md: 470 },
+                height: { xs: 240, md: 480 },
+                mr: { md: 5 },
+                "& > *": { transform: { xs: "scale(0.5)", md: "none" }, transformOrigin: "top left" },
+              }}
+            >
               <FlipFan cards={cards ?? []} />
             </Box>
           )}

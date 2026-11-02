@@ -35,10 +35,7 @@ export default function UpdateNote({ news }: { news: UpdateNews }) {
           top: 0,
           left: 0,
           right: 0,
-          bgcolor: 'rgba(10,22,40,0.72)',
-          backgroundImage: 'linear-gradient(rgba(255,138,61,0.12), rgba(255,138,61,0.12))',
-          backdropFilter: 'blur(6px)',
-          borderBottom: `1px solid rgba(255,138,61,0.35)`,
+          bgcolor: dmf.surface, // a flat step up from the page
         }}
       >
       <Container maxWidth="lg">
