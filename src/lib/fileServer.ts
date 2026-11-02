@@ -72,9 +72,9 @@ export function cardImageUrl(id: string): string {
 }
 
 /**
- * A card's data (card_texts/<id>.json). Monsters have attribute, level (rank for Xyz monsters),
- * typeline, atk and def (linkval instead of def for Link monsters, scale for Pendulums); Spells and
- * Traps have property ("Normal", "Continuous", ...). Errata texts still have their
+ * A card's data (card_texts/<id>.json). Monsters have attribute, one of level / rank (Xyz) /
+ * linkRating (Link), typeline, atk and def (a number or "?"; Link monsters have no def); Spells
+ * and Traps have property ("Normal", "Continuous", ...). Errata texts still have their
  * "~Vault Format erratum~" line in `desc`.
  */
 export type CardData = {
@@ -84,11 +84,10 @@ export type CardData = {
   attribute?: string;
   level?: number;
   rank?: number;
-  linkval?: number;
-  scale?: number;
+  linkRating?: number;
   typeline?: string[];
-  atk?: number;
-  def?: number;
+  atk?: number | string;
+  def?: number | string;
   property?: string;
   desc?: string;
 };

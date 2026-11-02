@@ -96,14 +96,17 @@ export default function Hero({
           {/* Click-to-flip cards: full size on desktop, half size on phones. Shown face-down while
               the card list loads, flipped up once it and the images are in; left out when there are
               no cards at all (no decks). The fan's rotated right card reaches past its box, hence
-              the right margin, so it stays inside the page's edge. */}
+              the right margin, so it stays inside the page's edge. Phones: some space above the
+              fan, so it doesn't crowd the top of the screen (its box is cut to the cards' height,
+              so the text below stays where it was). */}
           {(cards === null || cards.length > 0) && (
             <Box
               sx={{
                 flexShrink: 0,
                 alignSelf: { xs: "center", md: "auto" },
                 width: { xs: 235, md: 470 },
-                height: { xs: 240, md: 480 },
+                height: { xs: 205, md: 480 },
+                mt: { xs: 5, md: 0 },
                 mr: { md: 5 },
                 "& > *": { transform: { xs: "scale(0.5)", md: "none" }, transformOrigin: "top left" },
               }}

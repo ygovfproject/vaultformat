@@ -132,12 +132,13 @@ function CardText({ text }: { text: string }) {
   );
 }
 
-/** A score as printed: "?" for the unknown ones (stored as a negative number). */
-const score = (v: number | undefined) => (v === undefined ? null : v < 0 ? '?' : String(v));
+/** A score as printed: the number, or "?" (stored as "?", or as a negative number). */
+const score = (v: number | string | undefined) => (v === undefined || v === '' ? null : typeof v === 'number' && v < 0 ? '?' : String(v));
 
 /**
- * The top of the card text: name, then "LIGHT · Level 4" (monsters) or "Continuous Trap" (Spells
- * and Traps), the monster's types and its ATK / DEF.
+ * The top of the card text: name, then "LIGHT · Level 4" / "Rank 4" / "LINK-2" (monsters) or
+ * "Continuous Trap" (Spells and Traps), the monster's types and its ATK / DEF (Link monsters: ATK
+ * only).
  */
 function CardHeader({ data }: { data: CardData }) {
   const types = data.typeline ?? [];
@@ -145,10 +146,9 @@ function CardHeader({ data }: { data: CardData }) {
   const kind: string[] = [];
   if (monster) {
     if (data.attribute) kind.push(data.attribute);
-    if (data.linkval !== undefined) kind.push(`Link ${data.linkval}`);
+    if (data.linkRating !== undefined) kind.push(`LINK-${data.linkRating}`);
     else if (data.rank !== undefined) kind.push(`Rank ${data.rank}`);
     else if (data.level !== undefined) kind.push(`${types.includes('Xyz') ? 'Rank' : 'Level'} ${data.level}`);
-    if (data.scale !== undefined) kind.push(`Scale ${data.scale}`);
   } else if (data.type) {
     kind.push(data.property ? `${data.property} ${data.type}` : data.type);
   }

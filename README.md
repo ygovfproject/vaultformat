@@ -59,7 +59,7 @@ Pages with nothing to show yet say so instead of showing an empty page: Decks an
 **Card data (`card_texts/<card_id>.json`):** shown above the card text in the card panel.
 
 - all cards: `id`, `name`, `type` (`Monster`, `Spell`, `Trap`), `desc` (the card text)
-- monsters: `attribute`, `level` (`rank` for Xyz monsters), `typeline` (e.g. `["Reptile", "Tuner", "Effect"]`), `atk`, `def`; Link monsters have `linkval` instead of `def`, Pendulums also `scale`; a negative ATK/DEF shows as `?`
+- monsters: `attribute`, one of `level` / `rank` (Xyz) / `linkRating` (Link, shown as `LINK-2`), `typeline` (e.g. `["Reptile", "Tuner", "Effect"]`), `atk`, `def` (a number or `"?"`; Link monsters have no `def`)
 - Spells and Traps: `property` (`Normal`, `Continuous`, `Quick-Play`, ...)
 - in `desc`, a line of only dashes (`---`) is shown as a divider, e.g. between a Spellform card's spell and monster effects; errata keep their `~Vault Format erratum~` line there
 
