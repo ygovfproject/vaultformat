@@ -11,12 +11,8 @@ import IconButton from '@mui/material/IconButton';
 import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
-import { NAV_ITEMS } from '@/lib/nav';
+import { NAV_ITEMS, isActive } from '@/lib/nav';
 import { canHover, dmf, easeOut, fonts, size } from '@/theme';
-
-function isActive(pathname: string, href: string) {
-  return href === '/' ? pathname === '/' : pathname.startsWith(href);
-}
 
 function Logo() {
   return (
@@ -44,11 +40,8 @@ function Logo() {
           fontWeight: 700,
           fontSize: '1.6rem',
           letterSpacing: '0.12em',
-          // Solid orange at the top, solid blue at the bottom, a short blend in the middle.
-          background: `linear-gradient(180deg, ${dmf.orange} 30%, ${dmf.ice} 70%)`,
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          color: 'transparent',
+          // One solid colour: the orange diamond is the logo's only accent
+          color: dmf.text,
         }}
       >
         VAULT FORMAT
@@ -69,11 +62,11 @@ const linkSx = (active: boolean) => ({
   textDecoration: 'none',
   color: active ? dmf.orange : dmf.text,
   transition: 'color 150ms',
-  // Current page: orange underline, no hover effect. Other pages: on hover the text turns blue and a
-  // blue underline draws in from the left.
+  // Current page: orange text and underline, no hover effect. Other pages: on hover an orange
+  // underline draws in from the left (orange = something you can click).
   ...(active
     ? { cursor: 'default' }
-    : { [canHover]: { '&:hover': { color: dmf.ice }, '&:hover::after': { transform: 'scaleX(1)' } } }),
+    : { [canHover]: { '&:hover::after': { transform: 'scaleX(1)' } } }),
   '&::after': {
     content: '""',
     position: 'absolute',
@@ -81,7 +74,7 @@ const linkSx = (active: boolean) => ({
     right: 16,
     bottom: 2,
     height: 2,
-    bgcolor: active ? dmf.orange : dmf.ice,
+    bgcolor: dmf.orange,
     transform: active ? 'scaleX(1)' : 'scaleX(0)',
     transformOrigin: 'left',
     transition: `transform 200ms ${easeOut}`,
@@ -105,7 +98,13 @@ export default function NavBar() {
           {/* mr: the last link's text ends on the page's right edge, not its padding */}
           <Box component="nav" sx={{ display: { xs: 'none', sm: 'flex' }, gap: 0.5, mr: -2 }}>
             {NAV_ITEMS.map((item) => (
-              <Box key={item.href} component={NextLink} href={item.href} sx={linkSx(isActive(pathname, item.href))}>
+              <Box
+                key={item.href}
+                component={NextLink}
+                href={item.href}
+                aria-current={isActive(pathname, item.href) ? 'page' : undefined}
+                sx={linkSx(isActive(pathname, item.href))}
+              >
                 {item.label}
               </Box>
             ))}
@@ -148,6 +147,7 @@ export default function NavBar() {
               component={NextLink}
               href={item.href}
               onClick={() => setOpen(false)}
+              aria-current={isActive(pathname, item.href) ? 'page' : undefined}
               sx={{ ...linkSx(isActive(pathname, item.href)), fontSize: size.sub, fontFamily: fonts.display, fontWeight: 700 }}
             >
               {item.label}

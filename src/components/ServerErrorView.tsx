@@ -3,7 +3,7 @@
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import { withBase } from '@/lib/basePath';
-import { GlitchDivider, Title, NotchButton, Subtitle, pageBg } from './Decor';
+import { Title, NotchButton, Subtitle, pageBg } from './Decor';
 import { RETURN_KEY } from '@/lib/serverError';
 import { FaceDownCards } from './cards/CardAnimations';
 
@@ -35,10 +35,9 @@ export default function ServerErrorView() {
             </Box>
           </Box>
           <Box>
-            <Title variant="h1" component="h1" sx={{ fontSize: { xs: '3rem', md: '5rem' } }}>
+            <Title variant="h1" component="h1" sx={{ fontSize: { xs: '3rem', md: '5rem' }, mb: 3 }}>
               The deck slipped
             </Title>
-            <GlitchDivider />
             <Subtitle>
               Error 500: the cards and decks live on a separate server, and it isn&apos;t answering right now. It&apos;s not
               you: try again in a few minutes.

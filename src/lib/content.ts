@@ -10,6 +10,11 @@ export type DeckJson = {
   update_id: string;
   /** Optional square crop of the cover (set in the admin), see ./coverCrop */
   crop?: { x: number; y: number; size: number } | null;
+  /**
+   * Card id of the deck's boss monster. Optional: without it the cover card (`img`) is the boss.
+   * Needed when the deck plays a Vault Format erratum of the cover card (a different id).
+   */
+  boss?: string;
 };
 export type UpdateJson = { id: string; date: string; title: string };
 
@@ -30,6 +35,24 @@ export type Deck = DeckJson & {
 /** How long decks from the latest update keep their "New" tag after the update's date. */
 const NEW_FOR_DAYS = 30;
 export type Update = UpdateJson & { timestamp: number; description: string };
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * "04.11.2026" -> "4 Nov 2026": the same for readers everywhere (04.11 is 4 November in Europe but
+ * April 11 in the US). Anything that isn't dd.mm.yyyy is returned as it is.
+ */
+export function formatDate(value: string): string {
+  const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(value.trim());
+  if (!m || Number(m[2]) < 1 || Number(m[2]) > 12) return value;
+  return `${Number(m[1])} ${MONTHS[Number(m[2]) - 1]} ${m[3]}`;
+}
+
+/** The deck's boss monster card id: `boss` if set, else the cover card. Null if neither is a card id. */
+export function bossCardId(deck: Pick<DeckJson, 'boss' | 'img'>): string | null {
+  const id = String(deck.boss ?? deck.img ?? '').trim();
+  return /^\d+$/.test(id) ? String(Number(id)) : null;
+}
 
 /** Parse "dd.mm.yyyy" into a timestamp (0 if the format is wrong). */
 export function parseDate(value: string): number {

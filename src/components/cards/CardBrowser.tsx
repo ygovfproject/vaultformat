@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import NextLink from 'next/link';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
@@ -13,7 +14,7 @@ import { useTheme } from '@mui/material/styles';
 import { keyframes } from '@emotion/react';
 import { canHover, dmf, easeOut, fonts, size } from '@/theme';
 import { cardData, isErratum, withoutErratumLine, type CardData } from '@/lib/fileServer';
-import ScrollArea from './ScrollArea';
+import ScrollArea, { MoreBelowFade, hasMoreBelow } from './ScrollArea';
 
 /**
  * Card grid + card info panel, shared by the deck pages and the errata page.
@@ -23,7 +24,13 @@ import ScrollArea from './ScrollArea';
  * for the card before / after.
  */
 
-export type CardSection = { key: string; label: string; cards: string[] };
+export type CardSection = {
+  key: string;
+  label: string;
+  cards: string[];
+  /** Makes the section's heading a link (e.g. to the deck on the Errata page) */
+  href?: string;
+};
 type Selected = { section: string; index: number; card: string };
 
 // Real cards are 59 × 86 mm with ~2 mm corners (same as the home page).
@@ -44,10 +51,11 @@ const FEW_CARDS = 24;
  * same on every page, whatever the deck size or cards per row. Follows the window size.
  */
 function usePanelHeight(enabled: boolean) {
-  const ref = useRef<HTMLElement | null>(null);
+  // A callback ref (kept in state), so the height follows whichever box is first: on the Errata
+  // page switching views or searching replaces it with a new one
+  const [section, ref] = useState<HTMLElement | null>(null);
   const [height, setHeight] = useState<number | null>(null);
   useEffect(() => {
-    const section = ref.current;
     if (!enabled || !section) return;
     const measure = () => {
       const grid = section.querySelector<HTMLElement>('[data-card-grid]');
@@ -67,7 +75,7 @@ function usePanelHeight(enabled: boolean) {
     const ro = new ResizeObserver(measure);
     ro.observe(section);
     return () => ro.disconnect();
-  }, [enabled]);
+  }, [enabled, section]);
   return { ref, height };
 }
 
@@ -80,26 +88,35 @@ const isErrata = (card: string, texts: Texts) => isErratum(card, texts[card]?.de
 /** The card's name once its data has loaded, its id until then. */
 const cardName = (card: string, texts: Texts) => texts[card]?.name ?? `Card ${card}`;
 
-/** Small "E" (erratum) tag shown on erratum cards in the grid. */
+/** The "E" badge's look, shared by the tag on the cards and the key under the box heading. */
+const errataBadge = {
+  px: 0.5,
+  fontFamily: fonts.display,
+  fontWeight: 700,
+  fontSize: 12,
+  lineHeight: 1.5,
+  letterSpacing: '0.08em',
+  color: dmf.ink,
+  bgcolor: dmf.orange,
+} as const;
+
+/**
+ * Small "E" (erratum) tag on erratum cards in the grid, at the bottom-right corner of the card's
+ * art, so it doesn't cover the card's name. (Screen readers get "(Vault Format erratum)" in the
+ * card button's label instead.)
+ */
 function ErrataTag() {
   return (
     <Box
       component="span"
       aria-hidden
+      title="Vault Format erratum"
       sx={{
+        ...errataBadge,
         position: 'absolute',
-        top: '4%',
-        right: '-4%',
-        px: 0.5,
-        fontFamily: fonts.display,
-        fontWeight: 700,
-        fontSize: 12,
-        lineHeight: 1.5,
-        letterSpacing: '0.08em',
-        color: dmf.ink,
-        bgcolor: dmf.orange,
+        bottom: '31%',
+        right: '9%',
         boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
-        pointerEvents: 'none',
       }}
     >
       E
@@ -180,11 +197,11 @@ function ErrataBanner() {
         mb: 2,
         px: 2,
         py: 1.25,
-        borderLeft: `4px solid ${dmf.orange}`,
-        bgcolor: 'rgba(255,138,61,0.1)',
+        borderLeft: `4px solid ${dmf.ice}`,
+        bgcolor: 'rgba(56,200,255,0.1)',
       }}
     >
-      <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: dmf.orange, fontSize: size.ui }}>
+      <Typography sx={{ fontFamily: fonts.display, fontWeight: 700, color: dmf.text, fontSize: size.ui }}>
         Vault Format erratum
       </Typography>
     </Box>
@@ -228,7 +245,7 @@ function CardImage({ src, alt, eager = false }: { src: string | null; alt: strin
 }
 
 /** Card data (name, stats, text): undefined while loading, null if there's none. */
-type Texts = Record<string, CardData | null | undefined>;
+export type Texts = Record<string, CardData | null | undefined>;
 type Lookup = { images: Record<string, string | null>; texts: Texts };
 
 /** Parallel requests when loading card texts. */
@@ -238,7 +255,7 @@ const TEXT_REQUESTS = 6;
  * Load the card texts in the background, a few at a time, so the page can show the cards right
  * away. The selected card's text shows as soon as it's in.
  */
-function useCardTexts(ids: string[]): Texts {
+export function useCardTexts(ids: string[]): Texts {
   const [texts, setTexts] = useState<Texts>({});
   const key = ids.join(',');
   useEffect(() => {
@@ -266,6 +283,37 @@ const cardIn = keyframes`
   to { opacity: 1; transform: none; }
 `;
 const textIn = keyframes`from { opacity: 0; } to { opacity: 1; }`;
+
+/** The desktop card text box: scrolls, with a shade at the bottom while there's more below. */
+function FadingScroll({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(false);
+  const check = useCallback(() => {
+    if (ref.current) setMore(hasMoreBelow(ref.current));
+  }, []);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    check();
+    // The text loading in, or the window size, changes whether it fits
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    return () => ro.disconnect();
+  }, [check]);
+  return (
+    <Box sx={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', animation: `${textIn} 180ms ${easeOut}` }}>
+      <Box
+        ref={ref}
+        onScroll={check}
+        sx={{ p: 2.5, flex: 1, minHeight: 0, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: `${dmf.ice}55 transparent` }}
+      >
+        <Box>{children}</Box>
+      </Box>
+      <MoreBelowFade show={more} color={dmf.surface} />
+    </Box>
+  );
+}
 
 /** Big image + card text for the selected card. */
 function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: string | null; /** Phones: draggable scroll indicator */ dragScroll?: boolean }) {
@@ -323,24 +371,11 @@ function CardInfo({ card, images, texts, dragScroll = false }: Lookup & { card: 
       >
         {/* key={card}: a new card gets a fresh text box, so its scroll starts at the top (and it fades in) */}
         {dragScroll ? (
-          <ScrollArea key={card} sx={{ flex: 1, pl: 2.5, pr: 0.5, pt: 2.5, pb: 1, animation: `${textIn} 180ms ${easeOut}` }}>
+          <ScrollArea key={card} fadeColor={dmf.surface} sx={{ flex: 1, pl: 2.5, pr: 0.5, pt: 2.5, pb: 1, animation: `${textIn} 180ms ${easeOut}` }}>
             <Box sx={{ pb: 1.5 }}>{textBody}</Box>
           </ScrollArea>
         ) : (
-          <Box
-            key={card}
-            sx={{
-              p: 2.5,
-              flex: 1,
-              minHeight: 0,
-              overflowY: 'auto',
-              scrollbarWidth: 'thin',
-              scrollbarColor: `${dmf.ice}55 transparent`,
-              animation: `${textIn} 180ms ${easeOut}`,
-            }}
-          >
-            {textBody}
-          </Box>
+          <FadingScroll key={card}>{textBody}</FadingScroll>
         )}
       </Box>
     </Box>
@@ -367,12 +402,18 @@ function Section({
   /** Short card list: bigger cards */
   few: boolean;
 }) {
-  const { key, label, cards } = section;
+  const { key, label, cards, href } = section;
   return (
-    <Box component="section" ref={sectionRef} sx={{ bgcolor: dmf.surface, p: { xs: 1.5, md: 2.5 } }}>
+    <Box component="section" ref={sectionRef} data-section={key} sx={{ bgcolor: dmf.surface, p: { xs: 1.5, md: 2.5 } }}>
       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 2 }}>
-        <Typography component="h2" sx={{ fontFamily: fonts.display, fontWeight: 700, textTransform: 'uppercase', fontSize: { xs: '1.1rem', md: size.sub }, color: dmf.text }}>
-          {label}
+        <Typography component="h2" sx={{ fontFamily: fonts.display, fontWeight: 700, fontSize: { xs: '1.1rem', md: size.sub }, color: dmf.text }}>
+          {href ? (
+            <Box component={NextLink} href={href} sx={{ color: 'inherit', textDecorationColor: dmf.orange, textDecorationThickness: 2, textUnderlineOffset: 5, '&:hover': { color: dmf.orange } }}>
+              {label}
+            </Box>
+          ) : (
+            label
+          )}
         </Typography>
         <Typography sx={{ fontFamily: fonts.display, fontWeight: 600, fontSize: size.ui, color: dmf.textMuted }}>
           {cards.length} {cards.length === 1 ? 'card' : 'cards'}
@@ -409,8 +450,8 @@ function Section({
                   transition: `transform 150ms ${easeOut}, outline-color 150ms`,
                   [canHover]: { '&:hover': { transform: 'translateY(-4px)' } },
                   '&:active': { transform: 'scale(0.96)' },
-                  // Keyboard focus: blue, except on the selected card (focused while stepping with ← →)
-                  '&:focus-visible': { outline: `3px solid ${active ? dmf.orange : dmf.ice}` },
+                  // Keyboard focus: an orange ring, like everything else you can tab to
+                  '&:focus-visible': { outline: `3px solid ${dmf.orange}` },
                 }}
               >
                 <CardImage src={images[card] ?? null} alt={cardName(card, texts)} />
@@ -428,10 +469,13 @@ export default function CardBrowser({
   sections,
   images,
   errataTags = true,
+  texts: givenTexts,
 }: Omit<Lookup, 'texts'> & {
   sections: CardSection[];
   /** Show the small "E" tag on erratum cards (off on the errata page, where every card is one). */
   errataTags?: boolean;
+  /** Card texts loaded by the page (e.g. to search them); without it the browser loads its own */
+  texts?: Texts;
 }) {
   const theme = useTheme();
   const desktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
@@ -443,7 +487,18 @@ export default function CardBrowser({
   const panel = usePanelHeight(desktop);
   const few = all.length <= FEW_CARDS;
   // Texts load in the background once the cards are on screen
-  const texts = useCardTexts(all.map((c) => c.card));
+  const ownTexts = useCardTexts(givenTexts ? [] : all.map((c) => c.card));
+  const texts = givenTexts ?? ownTexts;
+
+  // The card list can change (a search on the Errata page): keep a card that's still there
+  // selected, else select the first one
+  useEffect(() => {
+    setSelected((cur) => {
+      if (cur && all.some((c) => c.section === cur.section && c.index === cur.index && c.card === cur.card)) return cur;
+      const same = cur && all.find((c) => c.card === cur.card);
+      return same ?? all[0] ?? null;
+    });
+  }, [all]);
 
   const select = (s: Selected) => {
     setSelected(s);
@@ -505,17 +560,38 @@ export default function CardBrowser({
             whole card column and the panel sticks below the header while scrolling, so it travels
             from the top of the Main Deck to the bottom of the last box. On short windows it's
             capped so it always fits on screen. */}
-        <Box component="aside" sx={{ display: { xs: 'none', md: 'block' } }}>
-          <Box sx={{ position: 'sticky', top: PANEL_TOP, height: panel.height ?? 870, maxHeight: 'calc(100vh - 120px)' }}>
+        <Box
+          component="aside"
+          sx={{ display: { xs: 'none', md: 'block' } }}
+        >
+          <Box
+            sx={{
+              position: 'sticky',
+              top: PANEL_TOP,
+              height: panel.height ?? 870,
+              maxHeight: 'calc(100vh - 120px)',
+            }}
+          >
             <CardInfo card={selected?.card ?? null} images={images} texts={texts} />
           </Box>
         </Box>
 
         {/* The last card box stretches so both columns end at the same line. */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, '& > section:last-of-type': { flexGrow: 1 } }}>
+        <Box
+          sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 3 }, '& > section:last-of-type': { flexGrow: 1 } }}
+        >
           {sections.map((s, i) => (
             <Section key={s.key} sectionRef={i === 0 ? panel.ref : undefined} section={s} images={images} texts={texts} selected={selected} onSelect={select} errataTags={errataTags} few={few} />
           ))}
+          {/* What the "E" means, under the last box, when any card has one */}
+          {errataTags && all.some((c) => isErrata(c.card, texts)) && (
+            <Typography sx={{ mt: { xs: -0.5, md: -1.5 }, fontSize: size.small, color: dmf.textMuted }}>
+              <Box component="span" sx={{ ...errataBadge, mr: 0.75 }}>
+                E
+              </Box>
+              Vault Format erratum
+            </Typography>
+          )}
         </Box>
       </Box>
 

@@ -7,7 +7,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { canHover, dmf, easeOut, fonts, size } from '@/theme';
 import type { DeckLink } from '@/lib/content';
 import type { DeckList } from '@/lib/decklist';
-import { GlitchDivider, Title } from '../Decor';
+import { Title } from '../Decor';
 import PageShell, { PAGE_TITLE_SIZE } from '../PageShell';
 import CardBrowser, { type CardSection } from '../cards/CardBrowser';
 
@@ -50,7 +50,7 @@ function NeighbourLink({ deck, next = false }: { deck: DeckLink; next?: boolean 
         {next ? 'Next deck' : 'Previous deck'}
         {next && <ArrowForwardIcon fontSize="small" />}
       </Box>
-      <Box component="span" className="name" sx={{ fontFamily: fonts.display, fontWeight: 700, fontSize: size.sub, textTransform: 'uppercase', color: dmf.text, transition: 'color 150ms' }}>
+      <Box component="span" className="name" sx={{ fontFamily: fonts.display, fontWeight: 700, fontSize: size.sub, color: dmf.text, transition: 'color 150ms' }}>
         {deck.title}
       </Box>
     </Box>
@@ -70,10 +70,9 @@ export default function DeckViewer({ deck }: { deck: DeckList }) {
       <Box component={NextLink} href="/decks" sx={{ ...smallLink, mb: 3 }}>
         <ArrowBackIcon fontSize="small" /> All decks
       </Box>
-      <Title variant="h1" component="h1" sx={{ fontSize: PAGE_TITLE_SIZE }}>
+      <Title variant="h1" component="h1" sx={{ fontSize: PAGE_TITLE_SIZE, mb: 1 }}>
         {deck.title}
       </Title>
-      <GlitchDivider />
 
       <CardBrowser sections={sections} images={deck.images} />
 

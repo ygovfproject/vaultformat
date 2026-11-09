@@ -3,7 +3,7 @@
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
-import { GlitchDivider, Title, NotchButton, Subtitle, pageBg } from './Decor';
+import { Title, NotchButton, Subtitle, pageBg } from './Decor';
 import { FaceDownCards, ShuffleStack } from './cards/CardAnimations';
 import { useCardFeed } from './cards/useCardFeed';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -17,8 +17,22 @@ function Shuffle({ cards }: { cards: string[] }) {
   return <ShuffleStack cards={feed} complete={feed.length === cards.length} />;
 }
 
-/** 404 page: a shuffling card stack next to the message. */
-export default function NotFoundView({ cards }: { cards: string[] }) {
+/**
+ * "Not found" page: a shuffling card stack next to the message. Used for the 404 and for a deck
+ * link that doesn't match any deck. (Reduced motion: the stack stands still.)
+ */
+export default function NotFoundView({
+  cards,
+  title = 'Card not found',
+  text = 'Error 404: this page isn’t in the deck. It may have been moved, or the link is wrong. Shuffling for a better one…',
+  children,
+}: {
+  cards: string[];
+  title?: string;
+  text?: React.ReactNode;
+  /** Shown under the text (e.g. "Did you mean …?") */
+  children?: React.ReactNode;
+}) {
   // Desktop only: phones get no stack and download no card images.
   const theme = useTheme();
   const desktop = useMediaQuery(theme.breakpoints.up('md'));
@@ -43,18 +57,15 @@ export default function NotFoundView({ cards }: { cards: string[] }) {
             <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 3 }}>
               <FaceDownCards width={80} />
             </Box>
-            <Title variant="h1" component="h1" sx={{ fontSize: { xs: '3rem', md: '5rem' } }}>
-              Card not found
+            <Title variant="h1" component="h1" sx={{ fontSize: { xs: '3rem', md: '5rem' }, mb: 3 }}>
+              {title}
             </Title>
-            <GlitchDivider />
-            <Subtitle>
-              Error 404: this page isn&apos;t in the deck. It may have been moved, or the link is wrong. Shuffling for a
-              better one…
-            </Subtitle>
+            <Subtitle>{text}</Subtitle>
+            {children}
             <Stack direction="row" sx={{ gap: 2.5, flexWrap: 'wrap', mt: 5 }}>
-              <NotchButton href="/">Back to Main</NotchButton>
+              <NotchButton href="/">Back to home</NotchButton>
               <NotchButton href="/decks" variant="ghost">
-                Browse Decks
+                Browse decks
               </NotchButton>
             </Stack>
           </Box>

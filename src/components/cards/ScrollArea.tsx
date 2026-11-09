@@ -12,22 +12,52 @@ const HIT_WIDTH = 28;
 const TRACK_INSET = 6;
 
 /**
+ * A shade at the bottom of a scroll box while there's more below, gone once the reader reaches
+ * the end. `color` is the box's background.
+ */
+export function MoreBelowFade({ show, color }: { show: boolean; color: string }) {
+  return (
+    <Box
+      aria-hidden
+      sx={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 40,
+        pointerEvents: 'none',
+        background: `linear-gradient(to bottom, transparent, ${color})`,
+        opacity: show ? 1 : 0,
+        transition: 'opacity 150ms',
+      }}
+    />
+  );
+}
+
+/** Whether a scroll box has more content below what's shown. */
+export function hasMoreBelow(el: HTMLElement) {
+  return el.scrollHeight - el.clientHeight - el.scrollTop > 4;
+}
+
+/**
  * A scroll box with its own scroll indicator on the right that can be held and dragged
  * (phones hide the native scrollbar and don't let you grab it). Tapping the track jumps there.
- * The indicator is hidden when the content fits.
+ * The indicator is hidden when the content fits; a shade at the bottom shows there's more below.
  */
-export default function ScrollArea({ children, sx }: { children: ReactNode; sx?: SxProps<Theme> }) {
+export default function ScrollArea({ children, sx, fadeColor }: { children: ReactNode; sx?: SxProps<Theme>; /** Background, for the "more below" shade */ fadeColor?: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; top: number; ratio: number } | null>(null);
   const [thumb, setThumb] = useState<{ top: number; height: number } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [more, setMore] = useState(false);
 
   const update = useCallback(() => {
     const el = scrollRef.current;
     const track = trackRef.current;
     if (!el || !track) return;
+    setMore(hasMoreBelow(el));
     const { scrollTop, scrollHeight, clientHeight } = el;
     if (scrollHeight <= clientHeight + 1) return setThumb(null);
     const trackH = track.clientHeight;
@@ -94,6 +124,7 @@ export default function ScrollArea({ children, sx }: { children: ReactNode; sx?:
       >
         <Box ref={contentRef}>{children}</Box>
       </Box>
+      {fadeColor && <MoreBelowFade show={more} color={fadeColor} />}
 
       {/* Track + draggable thumb */}
       <Box

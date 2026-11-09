@@ -1,6 +1,5 @@
 'use client';
 
-import { useId } from 'react';
 import NextLink from 'next/link';
 import Box from '@mui/material/Box';
 import Typography, { type TypographyProps } from '@mui/material/Typography';
@@ -9,7 +8,7 @@ import { canHover, dmf, easeOut, fonts, size } from '@/theme';
 /** Page background: flat navy (the Main page hero is the only textured surface). */
 export const pageBg = { backgroundColor: dmf.bg };
 
-/** Page and section heading: display type in solid text colour (the gradient is the logo's alone). */
+/** Page and section heading: display type in solid text colour. */
 export function Title({ sx, component = 'h2', ...props }: TypographyProps & { component?: React.ElementType }) {
   return <Typography component={component} {...props} sx={[{ color: dmf.text }, ...(Array.isArray(sx) ? sx : [sx])]} />;
 }
@@ -20,57 +19,9 @@ export function Subtitle({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Heading underline: solid bar → "//" slashes → fading rail with ticks → Vault Format diamond.
- * Scales proportionally (no stretching), so the slashes and diamond keep their shape.
+ * The site's two buttons: primary (filled orange) for the main action, secondary (orange
+ * outline) for the one next to it. Both have the small notched corners. Every page uses only these.
  */
-export function GlitchDivider({ color = dmf.orange, accent }: { color?: string; accent?: string }) {
-  const id = useId().replace(/:/g, '');
-  const second = accent ?? (color === dmf.ink ? dmf.ink : dmf.ice);
-  const slash = (x: number) => `${x + 6},1 ${x + 12},1 ${x + 6},15 ${x},15`;
-  return (
-    <Box
-      sx={{
-        width: '100%',
-        maxWidth: 520,
-        my: 3,
-        lineHeight: 0,
-      }}
-    >
-      <svg viewBox="0 0 520 16" width="100%" aria-hidden style={{ display: 'block', overflow: 'visible' }}>
-        <defs>
-          <linearGradient id={`${id}-rail`} x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor={color} />
-            <stop offset="100%" stopColor={second} stopOpacity="0.25" />
-          </linearGradient>
-        </defs>
-
-        {/* Lead block + main bar */}
-        <rect x="0" y="5" width="6" height="6" fill={color} />
-        <rect x="12" y="5" width="148" height="6" fill={color} />
-
-        {/* The "//" motif */}
-        <polygon points={slash(168)} fill={color} />
-        <polygon points={slash(182)} fill={color} />
-
-        {/* Fading rail with ticks */}
-        <rect x="204" y="7.25" width="262" height="1.5" fill={`url(#${id}-rail)`} />
-        <rect x="290" y="4" width="2" height="8" fill={second} opacity="0.6" />
-        <rect x="370" y="5" width="2" height="6" fill={second} opacity="0.45" />
-        <rect x="430" y="6" width="2" height="4" fill={second} opacity="0.35" />
-
-        {/* Vault Format diamond */}
-        <polygon points="490,1 497,8 490,15 483,8" fill="none" stroke={second} strokeWidth="2" />
-        <polygon points="490,5 493,8 490,11 487,8" fill={color} />
-
-        {/* Trailing bits */}
-        <rect x="506" y="6.5" width="3" height="3" fill={second} opacity="0.7" />
-        <rect x="514" y="6.5" width="3" height="3" fill={second} opacity="0.4" />
-      </svg>
-    </Box>
-  );
-}
-
-/** Double-border CTA with small corner notches, like the reference's primary button. */
 export function NotchButton({
   href,
   children,
@@ -81,6 +32,7 @@ export function NotchButton({
   /** Link target; leave out and pass onClick for a plain <button>. */
   href?: string;
   children: React.ReactNode;
+  /** 'solid' = primary, 'ghost' = secondary */
   variant?: 'solid' | 'ghost';
   /** File download: renders a plain <a download> (href must already include the base path). */
   download?: string;
@@ -96,20 +48,34 @@ export function NotchButton({
       onClick={onClick}
       sx={{
         position: 'relative',
-        display: 'inline-block',
-        p: '3px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 1,
+        px: { xs: 3, md: 4 },
+        py: 1.5,
         border: `2px solid ${dmf.orange}`,
-        bgcolor: 'transparent',
+        bgcolor: solid ? dmf.orange : 'transparent',
+        color: solid ? dmf.ink : dmf.orange,
         cursor: 'pointer',
-        font: 'inherit',
+        fontFamily: fonts.display,
+        fontWeight: 700,
+        fontSize: size.ui,
+        lineHeight: 1.4,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+        textAlign: 'center',
         textDecoration: 'none',
-        transition: `border-color 150ms, transform 150ms ${easeOut}`,
+        whiteSpace: 'nowrap',
+        transition: `background-color 150ms, border-color 150ms, transform 150ms ${easeOut}`,
         [canHover]: {
-          '&:hover': { borderColor: '#ffd2b0', transform: 'translateY(-2px)' },
-          '&:hover > span': { bgcolor: solid ? '#ffa565' : 'rgba(255,138,61,0.12)' },
+          '&:hover': solid
+            ? { bgcolor: '#ffa565', borderColor: '#ffa565', transform: 'translateY(-2px)' }
+            : { bgcolor: 'rgba(255,138,61,0.12)', transform: 'translateY(-2px)' },
         },
         // Pressed: a small push in (after the hover lift, so it wins while hovering too)
         '&:active': { transform: 'scale(0.97)' },
+        // Notched corners: small squares sitting on the top-left and bottom-right corners
         '&::before, &::after': {
           content: '""',
           position: 'absolute',
@@ -117,38 +83,23 @@ export function NotchButton({
           height: 7,
           bgcolor: dmf.orange,
         },
-        '&::before': { top: -2, left: -2 },
-        '&::after': { bottom: -2, right: -2 },
+        '&::before': { top: -5, left: -5 },
+        '&::after': { bottom: -5, right: -5 },
       }}
     >
-      <Box
-        component="span"
-        sx={{
-          display: 'block',
-          textAlign: 'center',
-          px: { xs: 3, md: 4 },
-          py: 1.5,
-          fontFamily: fonts.display,
-          fontWeight: 700,
-          fontSize: size.ui,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          color: solid ? dmf.ink : dmf.orange,
-          bgcolor: solid ? dmf.orange : 'transparent',
-          transition: 'background-color 150ms',
-        }}
-      >
-        {children}
-      </Box>
+      {children}
     </Box>
   );
 }
 
-/** A scatter of pixel squares that "dissolves" an edge between two bands. */
-export function PixelEdge({ color = dmf.bg, flip = false }: { color?: string; flip?: boolean }) {
+/**
+ * A scatter of pixel squares that "dissolves" an edge between two bands. `seed` picks the pattern,
+ * so two edges on one page don't look stamped from the same mould.
+ */
+export function PixelEdge({ color = dmf.bg, flip = false, seed: start = 7 }: { color?: string; flip?: boolean; seed?: number }) {
   // Deterministic pseudo-random layout so server and client markup match.
   const squares: { x: number; y: number; s: number }[] = [];
-  let seed = 7;
+  let seed = start;
   const rand = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
   for (let i = 0; i < 70; i++) {
     const x = Math.floor(rand() * 100);

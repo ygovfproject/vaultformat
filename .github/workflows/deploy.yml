@@ -31,10 +31,16 @@ jobs:
 
       # Project site (<user>.github.io/<repo>) -> BASE_PATH=/<repo>.
       # User site (<user>.github.io repo) -> empty. For a custom domain, set BASE_PATH to "".
-      - name: Work out the base path
+      - name: Work out the base path and site address
         run: |
           REPO="${{ github.event.repository.name }}"
-          if [[ "$REPO" == *.github.io ]]; then echo "BASE_PATH=" >> "$GITHUB_ENV"; else echo "BASE_PATH=/$REPO" >> "$GITHUB_ENV"; fi
+          if [[ "$REPO" == *.github.io ]]; then BASE_PATH=""; else BASE_PATH="/$REPO"; fi
+          echo "BASE_PATH=$BASE_PATH" >> "$GITHUB_ENV"
+          # Full address for link previews (Open Graph). A custom domain: set the SITE_URL variable.
+          OWNER="${{ github.repository_owner }}"
+          SITE_URL="${{ vars.SITE_URL }}"
+          if [[ -z "$SITE_URL" ]]; then SITE_URL="https://${OWNER,,}.github.io$BASE_PATH"; fi
+          echo "SITE_URL=$SITE_URL" >> "$GITHUB_ENV"
 
       # The pages load their content from the file server in the browser; its URL is built in.
       # Set FILE_SERVER in the repository's

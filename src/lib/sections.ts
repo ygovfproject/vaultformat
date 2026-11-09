@@ -34,3 +34,25 @@ export function splitMarkdown(markdown: string): MdPage {
 
   return { title, intro: intro.join('\n').trim(), sections: sections.map((s) => ({ ...s, body: s.body.trim() })) };
 }
+
+export type MdBlock = { intro: string; items: MdSection[] };
+
+/** Split a section's body at its "### Heading" lines: the text before the first one, then one item per heading. */
+export function splitSubsections(body: string): MdBlock {
+  const intro: string[] = [];
+  const items: MdSection[] = [];
+  let current: MdSection | null = null;
+  let inFence = false;
+  for (const line of body.split('\n')) {
+    if (/^```/.test(line)) inFence = !inFence;
+    if (!inFence && /^###\s+/.test(line)) {
+      const heading = line.replace(/^###\s+/, '').trim();
+      current = { id: slugify(heading), title: heading, body: '' };
+      items.push(current);
+      continue;
+    }
+    if (current) current.body += line + '\n';
+    else intro.push(line);
+  }
+  return { intro: intro.join('\n').trim(), items: items.map((s) => ({ ...s, body: s.body.trim() })) };
+}

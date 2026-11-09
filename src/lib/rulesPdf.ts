@@ -587,14 +587,32 @@ export function rulesVersion(markdown: string): string | null {
   return m ? m[1] : null;
 }
 
+/**
+ * The date on the version line, e.g. "04.11.2026" from "Version 1.2 · 04.11.2026" (or
+ * "Version 1.2, 04.11.2026"), or null when the line has no date.
+ */
+export function rulesDate(markdown: string): string | null {
+  const m = /^[ \t]*\**version\b[^\n]*?(\d{1,2}\.\d{1,2}\.\d{4})/im.exec(markdown);
+  return m ? m[1] : null;
+}
+
+/** A line that only gives the version (and its date): the page shows it under the download button instead. */
+export const VERSION_LINE = /^[ \t]*version\s*:?\s*v?\d[\w.-]*(?:\s*[,·(–-]?\s*\(?\d{1,2}\.\d{1,2}\.\d{4}\)?)?[ \t]*$/gim;
+
+/** The rules as a PDF file. */
+export function rulesPdfBytes(markdown: string, docTitle: string): Uint8Array {
+  const version = rulesVersion(markdown);
+  return markdownToPdf(markdown, {
+    title: version ? `${docTitle} (v${version})` : docTitle,
+    footer: version ? `${docTitle}  //  Version ${version}` : docTitle,
+  });
+}
+
 /** Turn the markdown into a PDF and download it as Vault_Format_rules_<version>.pdf. */
 export function downloadRulesPdf(markdown: string, docTitle: string) {
   const version = rulesVersion(markdown);
   const name = version ? `Vault_Format_rules_${version}` : 'Vault_Format_rules';
-  const bytes = markdownToPdf(markdown, {
-    title: version ? `${docTitle} (v${version})` : docTitle,
-    footer: version ? `${docTitle}  //  Version ${version}` : docTitle,
-  });
+  const bytes = rulesPdfBytes(markdown, docTitle);
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' }));
   const a = document.createElement('a');
   a.href = url;

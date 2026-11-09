@@ -1,0 +1,70 @@
+<!doctype html>
+<!--
+  Share image template (1200 x 630) for public/og/<page>.png.
+  Open in a browser with ?page=<home|decks|deck|errata|rules|updates>&server=<file server URL>,
+  then screenshot the #card element at 1200 x 630. See scripts/og/README.md.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Work+Sans:wght@400;500&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #060e1c; }
+  #card {
+    position: relative; width: 1200px; height: 630px; overflow: hidden; box-sizing: border-box;
+    padding: 64px 72px; color: #e8eef7; font-family: 'Work Sans', sans-serif;
+    background-color: #060e1c;
+    background-image:
+      radial-gradient(560px 400px at 82% 45%, rgba(56,200,255,0.20), transparent 70%),
+      radial-gradient(480px 320px at 8% 100%, rgba(255,138,61,0.14), transparent 70%),
+      linear-gradient(rgba(56,200,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56,200,255,0.06) 1px, transparent 1px);
+    background-size: auto, auto, 48px 48px, 48px 48px;
+  }
+  .logo { display: flex; align-items: center; gap: 16px; font-family: 'Chakra Petch'; font-weight: 700; font-size: 34px; letter-spacing: 0.12em; }
+  .diamond { width: 22px; height: 22px; border: 3px solid #38c8ff; transform: rotate(45deg); position: relative; }
+  .diamond::after { content: ''; position: absolute; inset: 4px; background: #ff8a3d; }
+  .text { position: absolute; left: 72px; bottom: 72px; width: 600px; }
+  h1 { font-family: 'Chakra Petch'; font-weight: 700; font-size: 76px; line-height: 1.05; letter-spacing: -0.01em; margin: 0 0 22px; }
+  p { font-size: 28px; line-height: 1.4; margin: 0; color: #c9d6e8; }
+  .bar { width: 64px; height: 6px; background: #ff8a3d; margin-bottom: 26px; }
+  .fan { position: absolute; right: 40px; top: 70px; width: 470px; height: 520px; }
+  .fan img { position: absolute; width: 230px; aspect-ratio: 59 / 86; object-fit: cover; border-radius: 3.5% / 2.4%;
+    box-shadow: 0 18px 30px rgba(0,0,0,0.55), 0 0 24px rgba(56,200,255,0.2); }
+  .fan img:nth-child(1) { left: 0; top: 80px; transform: rotate(-12deg); z-index: 1; }
+  .fan img:nth-child(2) { left: 120px; top: 0; transform: rotate(3deg); z-index: 2; }
+  .fan img:nth-child(3) { left: 240px; top: 90px; transform: rotate(15deg); z-index: 3; }
+</style>
+</head>
+<body>
+<div id="card">
+  <div class="logo"><div class="diamond"></div>VAULT FORMAT</div>
+  <div class="text"><div class="bar"></div><h1 id="title"></h1><p id="sub"></p></div>
+  <div class="fan" id="fan"></div>
+</div>
+<script>
+  // Card ids per page: bosses for the deck pages, errata for Errata, a mix elsewhere.
+  const PAGES = {
+    home:    { title: 'Yu-Gi-Oh! with premade decks', sub: 'No deckbuilding. No banlist. Pick a deck, shuffle up and duel.', cards: ['47826112', '34230233', '22110647'] },
+    decks:   { title: 'Decks', sub: 'Every deck in the Vault Format pool: premade, tested and frozen.', cards: ['83104731', '52687916', '23015896'] },
+    deck:    { title: 'Vault Format deck', sub: 'A premade, frozen deck from the Vault Format pool.', cards: ['27346636', '76774528', '10613952'] },
+    errata:  { title: 'Errata', sub: 'The cards that play differently in Vault Format.', cards: ['900000005', '900000004', '900000040'] },
+    rules:   { title: 'Rules', sub: 'The Vault Format rulebook, rule by rule.', cards: ['39139935', '900000052', '86585274'] },
+    updates: { title: 'Updates', sub: 'Every deck added to the Vault Format pool.', cards: ['69488544', '45222299', '900000081'] },
+  };
+  const q = new URLSearchParams(location.search);
+  const page = PAGES[q.get('page')] || PAGES.home;
+  const server = (q.get('server') || 'http://localhost:3002').replace(/\/+$/, '');
+  document.getElementById('title').textContent = page.title;
+  document.getElementById('sub').textContent = page.sub;
+  const fan = document.getElementById('fan');
+  window.ready = Promise.all(page.cards.map((id) => new Promise((done) => {
+    const img = new Image();
+    img.onload = img.onerror = done;
+    img.src = `${server}/cards/${id}.jpg`;
+    fan.appendChild(img);
+  }))).then(() => document.fonts.ready);
+</script>
+</body>
+</html>

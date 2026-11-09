@@ -2,36 +2,62 @@
 
 import { useMemo } from 'react';
 import { dmf } from '@/theme';
-import { splitMarkdown } from '@/lib/sections';
+import { splitMarkdown, splitSubsections, type MdSection } from '@/lib/sections';
 import type { UpdateNews } from '@/lib/content';
 import UpdateNote from './UpdateNote';
 import Hero from './Hero';
-import SectionBand, { bandColor, type BandVariant } from './SectionBand';
+import { BossBlock, ClosingCta, ColumnsBlock, TextBlock, type Boss } from './home/HomeBlocks';
 
-// Band rhythm: dark pattern → dark surface → bright ice-blue, then repeat.
-const RHYTHM: BandVariant[] = ['pattern', 'surface', 'ice'];
+/** The section about boss monsters gets the row of boss cards. */
+export const isBossSection = (s: MdSection) => /\bboss/i.test(s.title);
 
-/** Renders the Main page text (philosophy.md) as a hero + full-width section bands. */
-export default function PhilosophyView({ markdown, cards = null, news = null }: { markdown: string; cards?: string[] | null; news?: UpdateNews | null }) {
+/**
+ * The Main page (philosophy.md): the hero, then one block per "## Heading", each laid out by what
+ * it holds:
+ * - points ("### Heading" inside it): side by side, each with its icon
+ * - the boss section: the one bright band, with a row of boss cards
+ * - anything else: heading over text
+ * and a closing "Pick a deck" block. Dark blocks alternate between two navy tones.
+ */
+export default function PhilosophyView({
+  markdown,
+  cards = null,
+  news = null,
+  bosses = null,
+  deckCount = null,
+}: {
+  markdown: string;
+  cards?: string[] | null;
+  news?: UpdateNews | null;
+  /** null while loading */
+  bosses?: Boss[] | null;
+  deckCount?: number | null;
+}) {
   const page = useMemo(() => splitMarkdown(markdown), [markdown]);
+  const tones = [dmf.bg, dmf.surface];
 
-  const variants = page.sections.map((_, i) => RHYTHM[i % RHYTHM.length]);
+  let dark = 0; // dark blocks so far, for alternating tones
+  // Background of each block, worked out first so the boss band's edges can blend into its neighbours
+  const plan = page.sections.map((s) => {
+    const sub = splitSubsections(s.body);
+    if (isBossSection(s)) return { s, sub, kind: 'boss' as const, bg: dmf.ice };
+    const kind = sub.items.length === 0 ? ('text' as const) : ('columns' as const);
+    return { s, sub, kind, bg: tones[dark++ % 2] };
+  });
+  const ctaBg = tones[dark % 2];
 
   return (
     <>
       {news && <UpdateNote news={news} />}
-      <Hero title={page.title || 'Vault Format'} intro={page.intro} cards={cards} />
-      {page.sections.map((s, i) => (
-        <SectionBand
-          key={s.id}
-          id={s.id}
-          title={s.title}
-          body={s.body}
-          variant={variants[i]}
-          prevColor={i > 0 ? bandColor[variants[i - 1]] : dmf.bg}
-          nextColor={i < variants.length - 1 ? bandColor[variants[i + 1]] : dmf.header}
-        />
-      ))}
+      <Hero title={page.title || 'Yu-Gi-Oh! with premade decks'} intro={page.intro} cards={cards} />
+      {plan.map(({ s, sub, kind, bg }, i) => {
+        if (kind === 'boss') {
+          return <BossBlock key={s.id} section={s} bosses={bosses} prevColor={plan[i - 1]?.bg ?? dmf.bg} nextColor={plan[i + 1]?.bg ?? ctaBg} />;
+        }
+        if (kind === 'columns') return <ColumnsBlock key={s.id} section={s} intro={sub.intro} items={sub.items} bg={bg} />;
+        return <TextBlock key={s.id} section={s} bg={bg} />;
+      })}
+      <ClosingCta deckCount={deckCount} bg={ctaBg} />
     </>
   );
 }

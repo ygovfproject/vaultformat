@@ -2,7 +2,12 @@
 
 import { createTheme } from '@mui/material/styles';
 
-/** Palette: deep navy surfaces, warm orange + ice-blue accents. */
+/**
+ * Palette: deep navy surfaces, warm orange + ice-blue accents. Each accent has one job:
+ * - orange = interactive (links, buttons, the current page in the menu, keyboard focus)
+ * - ice blue = information (rule numbers, card attribute and level, dates)
+ * Bold text is the text colour, just heavier, so it never looks like a link.
+ */
 export const dmf = {
   bg: '#0a1628',
   bgDeep: '#060e1c',
@@ -42,7 +47,22 @@ export const easeOut = 'cubic-bezier(0.23, 1, 0.32, 1)';
 /** Hover styles go inside this, so a tap on a phone doesn't leave them stuck on. */
 export const canHover = '@media (hover: hover) and (pointer: fine)';
 
-const display = { fontFamily: fonts.display, fontWeight: 700, textTransform: 'uppercase' as const, lineHeight: 1 };
+/** Hidden on screen, still read by screen readers (labels, extra context). */
+export const visuallyHidden = {
+  // Strings, not numbers: in MUI's sx, width: 1 means 100%
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+} as const;
+
+/** Headings are set in mixed case; capitals are kept for short labels (logo, menu, buttons). */
+const display = { fontFamily: fonts.display, fontWeight: 700 };
 
 const theme = createTheme({
   cssVariables: true,
@@ -58,12 +78,12 @@ const theme = createTheme({
   typography: {
     fontFamily: fonts.body,
     // Large headings are set slightly tight; small ones keep the face's own spacing
-    h1: { ...display, fontSize: '4rem', letterSpacing: '-0.01em' },
-    h2: { ...display, fontSize: '3rem', letterSpacing: '-0.01em' },
-    h3: { ...display, fontSize: '1.75rem' },
-    h4: { ...display, fontSize: size.sub },
-    h5: { ...display, fontSize: '1.125rem' },
-    h6: { ...display, fontSize: '1rem' },
+    h1: { ...display, fontSize: '4rem', lineHeight: 1.1, letterSpacing: '-0.01em' },
+    h2: { ...display, fontSize: '3rem', lineHeight: 1.15, letterSpacing: '-0.01em' },
+    h3: { ...display, fontSize: '1.75rem', lineHeight: 1.2 },
+    h4: { ...display, fontSize: size.sub, lineHeight: 1.25 },
+    h5: { ...display, fontSize: '1.125rem', lineHeight: 1.3 },
+    h6: { ...display, fontSize: '1rem', lineHeight: 1.3 },
     body1: { fontSize: '1.125rem', lineHeight: 1.7 },
     body2: { fontSize: size.ui },
     caption: { fontSize: size.small },
@@ -94,6 +114,12 @@ const theme = createTheme({
           },
         },
         '::selection': { background: dmf.orange, color: dmf.ink },
+        // One keyboard focus ring for everything you can tab to (the browser's thin default is
+        // hard to see on navy)
+        ':where(a, button, input, select, textarea, summary, [tabindex]):focus-visible': {
+          outline: `2px solid ${dmf.orange}`,
+          outlineOffset: 3,
+        },
       },
     },
     MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },

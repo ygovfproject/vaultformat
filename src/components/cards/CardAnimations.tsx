@@ -10,6 +10,7 @@ import Box from '@mui/material/Box';
 import { keyframes } from '@emotion/react';
 import { canHover, dmf, easeOut } from '@/theme';
 import { withBase } from '@/lib/basePath';
+import { cardData } from '@/lib/fileServer';
 
 const RADIUS = '3.5% / 2.4%';
 const RATIO = '590 / 860';
@@ -28,12 +29,12 @@ function useTicker(fn: () => void, ms: number) {
   }, [ms]);
 }
 
-function CardImg({ src, style }: { src: string; style?: CSSProperties }) {
+function CardImg({ src, alt = '', style }: { src: string; alt?: string; style?: CSSProperties }) {
   return (
     <Box
       component="img"
       src={src}
-      alt=""
+      alt={alt}
       draggable={false}
       decoding="async"
       style={style}
@@ -105,9 +106,37 @@ function loadImage(url: string): Promise<boolean> {
   );
 }
 
-/** First deal: each card waits face-down at least this long (plus a small stagger) before flipping up. */
-const FIRST_DEAL_MS = 700;
-const DEAL_STAGGER_MS = 180;
+/**
+ * First deal: each card flips up as soon as its image is in (after a short stagger), so the hero
+ * isn't three card backs for long.
+ */
+const FIRST_DEAL_MS = 120;
+const DEAL_STAGGER_MS = 110;
+
+/** The card id in a card image URL (".../cards/123.jpg"), or null. */
+const cardIdOf = (src: string) => /\/cards\/(\d+)\.\w+$/.exec(src)?.[1] ?? null;
+
+/** Card names for image URLs, loaded as cards come up (for the flip buttons' labels and the images' alt text). */
+function useCardNames(srcs: string[]) {
+  const [names, setNames] = useState<Record<string, string>>({});
+  const key = srcs.join(',');
+  useEffect(() => {
+    let alive = true;
+    for (const src of srcs) {
+      const id = cardIdOf(src);
+      if (!id || names[src]) continue;
+      cardData(id).then(
+        (d) => alive && d?.name && setNames((n) => ({ ...n, [src]: d.name! })),
+        () => {},
+      );
+    }
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return names;
+}
 
 /**
  * Three cards, no automatic changes. They start face-down; each one flips face-up once its card
@@ -145,13 +174,25 @@ export function FlipFan({ cards }: { cards: string[] }) {
   };
 
   /** Load a new card (trying a few if some fail); null if none loaded. */
+  /**
+   * Load a new card: only monsters (a Spell or Trap's empty text box looks unfinished in the fan),
+   * trying a few if some fail; null if none loaded.
+   */
   const loadNext = async (fallback: string): Promise<string | null> => {
-    for (let attempt = 0; attempt < 3 && cards.length > 0; attempt++) {
+    let failed = 0;
+    for (let tries = 0; tries < 30 && failed < 3 && cards.length > 0; tries++) {
       const incoming = pickIncoming(fallback);
       pending.current.add(incoming);
+      const id = cardIdOf(incoming);
+      const data = id ? await cardData(id).catch(() => null) : null;
+      if (data && data.type !== 'Monster' && !data.typeline?.length) {
+        pending.current.delete(incoming);
+        continue; // a Spell or Trap: skip it
+      }
       const ok = await loadImage(incoming);
       pending.current.delete(incoming);
       if (ok) return incoming;
+      failed++;
     }
     return null;
   };
@@ -175,6 +216,10 @@ export function FlipFan({ cards }: { cards: string[] }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasCards]);
+
+  const names = useCardNames(slots.map((s) => s.src).filter((src) => src !== BACK));
+  /** The card face-up in slot i (null while it's face-down or not loaded yet) */
+  const faceName = (i: number) => (slots[i].src !== BACK && slots[i].turns % 2 === 0 ? names[slots[i].src] ?? null : null);
 
   const flip = async (i: number) => {
     if (busyRef.current[i] || cards.length === 0) return;
@@ -216,7 +261,7 @@ export function FlipFan({ cards }: { cards: string[] }) {
           <Box
             component="button"
             type="button"
-            aria-label="Flip card"
+            aria-label={faceName(i) ? `Flip ${faceName(i)}` : 'Flip card'}
             onClick={() => flip(i)}
             sx={{
               display: 'block',
@@ -237,7 +282,7 @@ export function FlipFan({ cards }: { cards: string[] }) {
           >
             {/* front */}
             <Box sx={{ backfaceVisibility: 'hidden', borderRadius: RADIUS, boxShadow: FACE_SHADOW }}>
-              <CardImg src={slots[i].src} />
+              <CardImg src={slots[i].src} alt={faceName(i) ?? ''} />
             </Box>
             {/* back */}
             <Box sx={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', borderRadius: RADIUS, boxShadow: FACE_SHADOW }}>

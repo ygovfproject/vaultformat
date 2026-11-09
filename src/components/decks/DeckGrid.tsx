@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import NextLink from 'next/link';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import InputBase from '@mui/material/InputBase';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import SearchIcon from '@mui/icons-material/Search';
+import ButtonBase from '@mui/material/ButtonBase';
 import { keyframes } from '@emotion/react';
 import { canHover, dmf, easeOut, fonts, size } from '@/theme';
 import type { Deck } from '@/lib/content';
+import { getDeckProfile, DECK_TAGS, TAG_HINTS, type DeckProfile, type DeckTag } from '@/lib/deckProfile';
+import { closest } from '@/lib/fuzzy';
+import SearchBox from '../SearchBox';
 
 type Sort = 'newest' | 'az';
 
@@ -46,7 +48,27 @@ function CoverFallback() {
   );
 }
 
-function DeckTile({ deck, now, position }: { deck: Deck; now: number | null; position: number }) {
+/** Tags per deck id; filled in as they load (they need every deck's card texts). */
+function useDeckProfiles(decks: Deck[]) {
+  const [profiles, setProfiles] = useState<Record<string, DeckProfile>>({});
+  const key = decks.map((d) => d.id).join(',');
+  useEffect(() => {
+    let alive = true;
+    for (const deck of decks) {
+      getDeckProfile(deck).then(
+        (p) => alive && setProfiles((all) => ({ ...all, [deck.id]: p })),
+        () => {},
+      );
+    }
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return profiles;
+}
+
+function DeckTile({ deck, profile, now, position }: { deck: Deck; profile?: DeckProfile; now: number | null; position: number }) {
   // Built pages show the tag as of build time; in the browser it's re-checked against today's date,
   // so it disappears after 30 days even without a rebuild.
   const isNew = now === null ? deck.isNew : deck.newUntil !== null && now < deck.newUntil;
@@ -65,7 +87,7 @@ function DeckTile({ deck, now, position }: { deck: Deck; now: number | null; pos
         position: 'relative',
         p: '2px',
         clipPath: CLIP,
-        bgcolor: 'rgba(56,200,255,0.35)',
+        bgcolor: 'rgba(232,238,247,0.18)',
         transform: 'translateY(0)',
         transition: `transform 200ms ${easeOut}, background-color 200ms ${easeOut}`,
         willChange: 'transform',
@@ -115,7 +137,7 @@ function DeckTile({ deck, now, position }: { deck: Deck; now: number | null; pos
           sx={{
             position: 'absolute',
             inset: 0,
-            background: `linear-gradient(180deg, rgba(6,14,28,0) 40%, rgba(6,14,28,0.7) 70%, ${dmf.bgDeep} 100%)`,
+            background: `linear-gradient(180deg, rgba(6,14,28,0) 30%, rgba(6,14,28,0.78) 62%, ${dmf.bgDeep} 100%)`,
           }}
         />
 
@@ -141,75 +163,147 @@ function DeckTile({ deck, now, position }: { deck: Deck; now: number | null; pos
           </Box>
         )}
 
-        {/* Title block */}
-        <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, p: { xs: 1.5, md: 2 }, pl: { xs: 2.5, md: 3 } }}>
+        {/* Title block: name, and how the deck plays */}
+        <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: 0, p: { xs: 1.5, md: 2 }, pl: { xs: 2, md: 2.5 } }}>
           <Typography
             className="deck-title"
             component="h3"
             sx={{
               fontFamily: fonts.display,
               fontWeight: 700,
-              textTransform: 'uppercase',
               fontSize: { xs: '1.05rem', md: size.sub },
-              lineHeight: 1.05,
+              lineHeight: 1.1,
               color: dmf.text,
               transition: 'color 150ms',
             }}
           >
             {deck.title}
           </Typography>
-          <Box sx={{ mt: 1, height: 3, width: 36, bgcolor: dmf.orange }} />
+          {/* Fixed height, so tiles don't shift as the tags load in */}
+          <Typography
+            sx={{ mt: 0.5, minHeight: '1.4em', fontFamily: fonts.display, fontWeight: 600, fontSize: size.small, lineHeight: 1.4, color: dmf.ice }}
+          >
+            {/* Each tag stays whole: a narrow tile wraps between tags, never inside one or after a dot */}
+            {profile?.tags.map((t, i) => (
+              <Fragment key={t}>
+                {i > 0 && ' '}
+                <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
+                  {i > 0 && '· '}
+                  {t}
+                </Box>
+              </Fragment>
+            ))}
+          </Typography>
         </Box>
       </Box>
     </Box>
   );
 }
 
+/** Tag filter: a row of toggles, shown once every deck's tags are in. */
+function TagFilter({ counts, selected, onToggle }: { counts: Record<DeckTag, number>; selected: DeckTag[]; onToggle: (t: DeckTag) => void }) {
+  const tags = DECK_TAGS.filter((t) => counts[t] > 0);
+  if (tags.length === 0) return null;
+  return (
+    <Box role="group" aria-label="Filter by card type" sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+      {tags.map((t) => {
+        const on = selected.includes(t);
+        return (
+          <ButtonBase
+            key={t}
+            aria-pressed={on}
+            title={TAG_HINTS[t]}
+            onClick={() => onToggle(t)}
+            sx={{
+              px: 1.5,
+              py: 0.75,
+              gap: 0.75,
+              border: `1px solid ${on ? dmf.orange : 'rgba(232,238,247,0.25)'}`,
+              bgcolor: on ? dmf.orange : 'transparent',
+              color: on ? dmf.ink : dmf.text,
+              fontFamily: fonts.display,
+              fontWeight: 700,
+              fontSize: size.ui,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              transition: 'background-color 150ms, border-color 150ms, color 150ms',
+              [canHover]: { '&:hover': on ? { bgcolor: '#ffa565' } : { borderColor: dmf.orange, color: dmf.orange } },
+            }}
+          >
+            {t}
+            <Box component="span" sx={{ fontWeight: 600, opacity: 0.75 }}>
+              {counts[t]}
+            </Box>
+          </ButtonBase>
+        );
+      })}
+    </Box>
+  );
+}
+
+/** A button that looks like a text link (orange, underlined). */
+const linkButton = {
+  p: 0,
+  fontFamily: fonts.body,
+  fontSize: 'inherit',
+  fontWeight: 600,
+  color: dmf.orange,
+  textDecoration: 'underline',
+  textDecorationThickness: 2,
+  textUnderlineOffset: 4,
+  verticalAlign: 'baseline',
+} as const;
+
 export default function DeckGrid({ decks }: { decks: Deck[] }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<Sort>('newest');
+  const [tags, setTags] = useState<DeckTag[]>([]);
+  const profiles = useDeckProfiles(decks);
+  const profilesReady = decks.every((d) => profiles[d.id]);
   // Today's date, read after the page loads (null during the first render, which matches the built HTML)
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => setNow(Date.now()), []);
 
+  const counts = useMemo(() => {
+    const c = Object.fromEntries(DECK_TAGS.map((t) => [t, 0])) as Record<DeckTag, number>;
+    for (const d of decks) for (const t of profiles[d.id]?.tags ?? []) c[t]++;
+    return c;
+  }, [decks, profiles]);
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = q ? decks.filter((d) => d.title.toLowerCase().includes(q) || d.id.toLowerCase().includes(q)) : [...decks];
+    let list = q
+      ? decks.filter(
+          (d) => d.title.toLowerCase().includes(q) || d.id.toLowerCase().includes(q),
+        )
+      : [...decks];
+    // A deck shows if it has any of the chosen tags
+    if (tags.length) list = list.filter((d) => profiles[d.id]?.tags.some((t) => tags.includes(t)));
     return sort === 'az' ? list.sort((a, b) => a.title.localeCompare(b.title)) : list; // decks arrive newest-first
-  }, [decks, query, sort]);
+  }, [decks, query, sort, tags, profiles]);
+
+  const suggestion = useMemo(
+    () => (visible.length === 0 && query.trim() ? closest(query, decks, (d) => [d.title]) : null),
+    [visible.length, query, decks],
+  );
+  const toggleTag = (t: DeckTag) => setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
+  const clearAll = () => {
+    setQuery('');
+    setTags([]);
+  };
+  const q = query.trim();
 
   return (
     <Box>
       {/* Toolbar */}
-      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            px: 2,
-            py: 0.75,
-            flex: '1 1 260px',
-            maxWidth: 420,
-            border: '1px solid rgba(56,200,255,0.3)',
-            bgcolor: 'rgba(6,14,28,0.6)',
-            '&:focus-within': { borderColor: dmf.orange },
-          }}
-        >
-          <SearchIcon sx={{ color: dmf.textMuted }} />
-          <InputBase
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search decks"
-            inputProps={{ 'aria-label': 'Search decks' }}
-            sx={{ flex: 1, color: dmf.text }}
-          />
-        </Box>
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <SearchBox value={query} onChange={setQuery} label="Search decks" placeholder="Search decks" />
         <ToggleButtonGroup
           exclusive
           size="small"
           value={sort}
           onChange={(_, v: Sort | null) => v && setSort(v)}
+          aria-label="Sort decks"
           sx={{
             '& .MuiToggleButton-root': {
               px: 2,
@@ -218,18 +312,43 @@ export default function DeckGrid({ decks }: { decks: Deck[] }) {
               fontWeight: 700,
               letterSpacing: '0.08em',
               color: dmf.textMuted,
-              borderColor: 'rgba(56,200,255,0.3)',
+              borderColor: 'rgba(232,238,247,0.25)',
             },
-            '& .Mui-selected': { color: `${dmf.ink} !important`, bgcolor: `${dmf.ice} !important` },
+            // Selected: orange, like every other control
+            '& .Mui-selected': { color: `${dmf.ink} !important`, bgcolor: `${dmf.orange} !important` },
           }}
         >
           <ToggleButton value="newest">Newest</ToggleButton>
           <ToggleButton value="az">A–Z</ToggleButton>
         </ToggleButtonGroup>
       </Box>
+      {/* Its space is kept while the tags load, so the grid doesn't jump down */}
+      <Box sx={{ minHeight: 40, mb: 5 }}>{profilesReady && <TagFilter counts={counts} selected={tags} onToggle={toggleTag} />}</Box>
 
       {visible.length === 0 ? (
-        <Typography sx={{ color: dmf.textMuted, py: 6 }}>No decks match “{query}”.</Typography>
+        <Box role="status" sx={{ py: 6 }}>
+          <Typography sx={{ color: dmf.text, mb: 1 }}>
+            {q ? `No decks match “${q}”${tags.length ? ` with ${tags.join(' or ')}` : ''}.` : `No decks use ${tags.join(' or ')}.`}
+          </Typography>
+          {suggestion && (
+            <Typography sx={{ color: dmf.text, mb: 1 }}>
+              Did you mean{' '}
+              <ButtonBase
+                onClick={() => {
+                  setQuery(suggestion.title);
+                  setTags([]);
+                }}
+                sx={linkButton}
+              >
+                {suggestion.title}
+              </ButtonBase>
+              ?
+            </Typography>
+          )}
+          <ButtonBase onClick={clearAll} sx={{ ...linkButton, mt: 1 }}>
+            {tags.length && q ? 'Clear search and filters' : tags.length ? 'Clear filters' : 'Clear search'}
+          </ButtonBase>
+        </Box>
       ) : (
         <Box
           sx={{
@@ -240,7 +359,7 @@ export default function DeckGrid({ decks }: { decks: Deck[] }) {
           }}
         >
           {visible.map((deck, i) => (
-            <DeckTile key={deck.id} deck={deck} now={now} position={i} />
+            <DeckTile key={deck.id} deck={deck} profile={profiles[deck.id]} now={now} position={i} />
           ))}
         </Box>
       )}

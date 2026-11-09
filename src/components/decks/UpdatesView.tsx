@@ -1,23 +1,33 @@
 'use client';
 
-import { useState } from 'react';
 import Box from '@mui/material/Box';
-import Collapse from '@mui/material/Collapse';
 import Typography from '@mui/material/Typography';
-import ButtonBase from '@mui/material/ButtonBase';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { canHover, dmf, fonts, size } from '@/theme';
-import type { Update } from '@/lib/content';
+import { dmf, fonts, size } from '@/theme';
+import { formatDate, type DeckJson, type Update } from '@/lib/content';
 import Markdown from '../Markdown';
+import { Subtitle, Title } from '../Decor';
+import PageShell, { PAGE_TITLE_SIZE } from '../PageShell';
 
-function UpdateEntry({ update, latest = false }: { update: Update; latest?: boolean }) {
+/**
+ * Placeholders in an update's .md: [decks] becomes the update's decks (each a chip linking to it),
+ * [n] the number of them.
+ */
+function fillPlaceholders(text: string, decks: DeckJson[]): string {
+  // Read as a sentence: "A, B and C"
+  const links = decks.map((d) => `[${d.title.replace(/[[\]]/g, '')}](/deck/?d=${encodeURIComponent(d.id)})`);
+  const list = links.length > 1 ? `${links.slice(0, -1).join(', ')} and ${links[links.length - 1]}` : (links[0] ?? '');
+  return text.replace(/\[decks\]/gi, list).replace(/\[n\]/gi, String(decks.length));
+}
+
+function UpdateEntry({ update, decks, latest = false, first = false }: { update: Update; decks: DeckJson[]; latest?: boolean; /** The oldest update: named "Launch" if it has no title */ first?: boolean }) {
   return (
     <Box
       component="article"
       sx={{
         position: 'relative',
         pl: { xs: 3, md: 4 },
-        pb: 4,
+        pb: 6,
+        '&:last-of-type': { pb: 0 },
         // Timeline line + diamond marker
         '&::before': {
           content: '""',
@@ -28,6 +38,7 @@ function UpdateEntry({ update, latest = false }: { update: Update; latest?: bool
           width: 2,
           bgcolor: 'rgba(56,200,255,0.2)',
         },
+        '&:last-of-type::before': { display: 'none' },
         '&::after': {
           content: '""',
           position: 'absolute',
@@ -36,97 +47,72 @@ function UpdateEntry({ update, latest = false }: { update: Update; latest?: bool
           width: 12,
           height: 12,
           transform: 'rotate(45deg)',
-          bgcolor: latest ? dmf.orange : dmf.ice,
-          boxShadow: latest ? `0 0 16px ${dmf.orange}` : 'none',
+          bgcolor: dmf.ice, // the "Latest" badge marks the newest; orange is only for things you can click
         },
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 1 }}>
-        <Typography
-          component="time"
-          sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.12em', color: dmf.ice, fontSize: size.ui }}
-        >
-          {update.date}
+        <Typography component="time" sx={{ fontFamily: fonts.display, fontWeight: 700, letterSpacing: '0.04em', color: dmf.ice, fontSize: size.ui }}>
+          {formatDate(update.date)}
         </Typography>
         {latest && (
-          <Box
-            component="span"
-            sx={{
-              px: 1,
-              py: 0.25,
-              fontFamily: fonts.display,
-              fontSize: size.small,
-              fontWeight: 700,
-              color: dmf.ink,
-              bgcolor: dmf.orange,
-            }}
-          >
+          <Box component="span" sx={{ px: 1, py: 0.25, fontFamily: fonts.display, fontSize: size.small, fontWeight: 700, color: dmf.ink, bgcolor: dmf.orange }}>
             Latest
           </Box>
         )}
       </Box>
-      <Typography variant="h4" component="h3" sx={{ color: dmf.text, mb: 1.5 }}>
-        {update.title}
+      <Typography variant="h4" component="h2" sx={{ color: dmf.text, mb: 1.5 }}>
+        {update.title.trim() || (first ? 'Launch' : 'Update')}
       </Typography>
       {update.description && (
-        <Box sx={{ '& p, & li': { fontSize: size.text } }}>
-          <Markdown>{update.description}</Markdown>
+        <Box
+          sx={{
+            '& p, & li': { fontSize: size.text },
+            // Links to decks ([decks]) read as part of the sentence: body-colour text with an orange
+            // underline (orange = clickable), not a wall of bold orange links
+            '& a[href*="/deck/?d="]': {
+              color: dmf.text,
+              fontWeight: 500,
+              textDecoration: 'underline',
+              textDecorationColor: 'rgba(255,138,61,0.6)',
+              textDecorationThickness: '1px',
+              textUnderlineOffset: '3px',
+              whiteSpace: 'nowrap',
+              transition: 'color 150ms, text-decoration-color 150ms',
+              '&:hover': { color: dmf.orange, textDecorationColor: dmf.orange },
+            },
+          }}
+        >
+          <Markdown>{fillPlaceholders(update.description, decks)}</Markdown>
         </Box>
       )}
     </Box>
   );
 }
 
-/**
- * Changelog: only the newest update is shown until the user expands the list. Desktop: heading on
- * the left, the updates on the right (like the Main page's sections).
- */
-export default function UpdatesSection({ updates }: { updates: Update[] }) {
-  const [open, setOpen] = useState(false);
-  if (updates.length === 0) return null;
-  const [latest, ...older] = updates;
-
+/** /updates/: every update, newest first, with the decks it added. */
+export default function UpdatesView({ updates, decks }: { updates: Update[]; decks: DeckJson[] }) {
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '5fr 7fr' }, columnGap: 8 }}>
-      <Typography component="h2" variant="h2" sx={{ color: dmf.text, fontSize: { xs: '2rem', md: '2.4rem' }, mb: 4 }}>
+    <PageShell>
+      <Title variant="h1" component="h1" sx={{ fontSize: PAGE_TITLE_SIZE, mb: 3 }}>
         Updates
-      </Typography>
-
-      <Box>
-        <UpdateEntry update={latest} latest />
-
-        {older.length > 0 && (
-          <>
-            <Collapse in={open} unmountOnExit>
-              {older.map((u) => (
-                <UpdateEntry key={u.id} update={u} />
-              ))}
-            </Collapse>
-            <ButtonBase
-              onClick={() => setOpen((v) => !v)}
-              aria-expanded={open}
-              sx={{
-                mb: 3,
-                gap: 1,
-                px: 2,
-                py: 1,
-                fontFamily: fonts.display,
-                fontWeight: 700,
-                fontSize: size.ui,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: dmf.ice,
-                bgcolor: 'rgba(56,200,255,0.1)',
-                transition: 'background-color 150ms',
-                [canHover]: { '&:hover': { bgcolor: 'rgba(56,200,255,0.2)' } },
-              }}
-            >
-              {open ? 'Hide older updates' : `Show all updates (${updates.length})`}
-              <ExpandMoreIcon fontSize="small" sx={{ transition: 'transform 200ms', transform: open ? 'rotate(180deg)' : 'none' }} />
-            </ButtonBase>
-          </>
+      </Title>
+      <Subtitle>Every update to the Vault Format pool, newest first. Released decks never change, so an update only ever adds decks.</Subtitle>
+      <Box sx={{ mt: { xs: 5, md: 6 }, maxWidth: 760 }}>
+        {updates.length === 0 ? (
+          <Typography sx={{ color: dmf.text }}>No updates yet.</Typography>
+        ) : (
+          updates.map((u, i) => (
+            <UpdateEntry
+              key={u.id}
+              update={u}
+              latest={i === 0 && updates.length > 1}
+              first={i === updates.length - 1}
+              decks={decks.filter((d) => String(d.update_id) === String(u.id)).sort((a, b) => a.title.localeCompare(b.title))}
+            />
+          ))
         )}
       </Box>
-    </Box>
+    </PageShell>
   );
 }

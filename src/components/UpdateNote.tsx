@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { canHover, dmf, fonts, size } from '@/theme';
-import type { UpdateNews } from '@/lib/content';
+import { formatDate, type UpdateNews } from '@/lib/content';
 
 /**
  * Main page note: an update coming within 5 days ("... will be released on ..."), or the latest
@@ -40,7 +40,7 @@ export default function UpdateNote({ news }: { news: UpdateNews }) {
       >
       <Container maxWidth="lg">
         <Box
-          {...(upcoming ? { component: 'p' as const } : { component: NextLink, href: '/decks' })}
+          {...(upcoming ? { component: 'p' as const } : { component: NextLink, href: '/updates' })}
           sx={{
             m: 0,
             display: 'flex',
@@ -62,11 +62,11 @@ export default function UpdateNote({ news }: { news: UpdateNews }) {
           }}
         >
           {upcoming ? (
-            // "Ancient Legacy update will be released on 05.10.2026!"
+            // "Ancient Legacy update will be released on 5 Oct 2026!"
             <Box component="span">
-              <Box component="span" sx={{ color: dmf.orange }}>{name ? `${name} update` : 'New update'}</Box>
+              <Box component="span" sx={{ fontWeight: 700 }}>{name ? `${name} update` : 'New update'}</Box>
               {' will be released on '}
-              <Box component="span" sx={{ color: dmf.orange }}>{news.date}</Box>!
+              <Box component="span" sx={{ color: dmf.ice, whiteSpace: 'nowrap' }}>{formatDate(news.date)}</Box>!
             </Box>
           ) : (
           <>
@@ -79,11 +79,17 @@ export default function UpdateNote({ news }: { news: UpdateNews }) {
               {name} update
             </Box>
           )}
+          {/* The last words and the arrow stay on one line, so the arrow never wraps on its own */}
           <Box component="span" sx={{ color: dmf.textMuted, fontWeight: 500 }}>
-            {news.date}
-            {decks > 0 && ` · ${decks} new deck${decks === 1 ? '' : 's'}`}
+            {formatDate(news.date)}
+            {decks > 0 && (
+              <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
+                {` · ${decks} new deck${decks === 1 ? '' : 's'}`}
+                <ArrowForwardIcon className="arrow" sx={{ ml: 1, fontSize: '1rem', verticalAlign: '-0.15em', color: dmf.orange, transition: 'transform 150ms' }} />
+              </Box>
+            )}
           </Box>
-          <ArrowForwardIcon className="arrow" sx={{ fontSize: '1rem', color: dmf.orange, transition: 'transform 150ms' }} />
+          {decks === 0 && <ArrowForwardIcon className="arrow" sx={{ fontSize: '1rem', color: dmf.orange, transition: 'transform 150ms' }} />}
           </>
           )}
         </Box>

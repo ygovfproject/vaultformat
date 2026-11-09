@@ -2,35 +2,42 @@ import { getContentText, readDecksJson } from './content';
 import { parseYdk } from './decklist';
 import { cardData, cardImageUrl, fetchText, isCustomCard, isErratum } from './fileServer';
 
+/** One deck's errata, in deck-list order. */
+export type ErrataGroup = { deckId: string; deckTitle: string; cards: string[] };
+
 export type ErrataData = {
   /** Intro text from content/errata.md ('' if missing) */
   intro: string;
-  /** Erratum card ids used in any deck (custom cards whose text has the "~Vault Format erratum~" line), in deck-list order */
-  cards: string[];
+  /** Decks that play errata, by name; a card two decks share is listed under both */
+  groups: ErrataGroup[];
   images: Record<string, string | null>;
 };
 
 /**
- * All erratum card ids (custom cards, 90000nnnn, whose text has the "~Vault Format erratum~" line) that appear in the deck lists (decks/<id>.ydk on the file server, for every
- * deck in decks.json), in the order they first appear: decks by id, cards in deck-list order.
+ * Erratum cards (custom cards, 90000nnnn, whose text has the "~Vault Format erratum~" line) per
+ * deck (decks/<id>.ydk on the file server, for every deck in decks.json). Decks without errata are
+ * left out.
  */
-async function errataFromDecks(): Promise<string[]> {
-  const ids = (await readDecksJson()).map((d) => d.id).sort((a, b) => a.localeCompare(b));
-  const ydks = await Promise.all(ids.map(async (id) => (await fetchText(`decks/${id}.ydk`)) ?? ''));
+async function errataByDeck(): Promise<ErrataGroup[]> {
+  const decks = [...(await readDecksJson())].sort((a, b) => a.title.localeCompare(b.title));
+  const ydks = await Promise.all(decks.map(async (d) => (await fetchText(`decks/${d.id}.ydk`)) ?? ''));
 
-  const cards = new Set<string>(); // a Set keeps insertion order
-  for (const ydk of ydks) {
+  const perDeck = ydks.map((ydk) => {
     const { main, extra, side } = parseYdk(ydk);
-    for (const id of [...main, ...extra, ...side]) if (isCustomCard(id)) cards.add(id);
-  }
-  const custom = [...cards];
+    return [...new Set([...main, ...extra, ...side].filter(isCustomCard))];
+  });
+  const custom = [...new Set(perDeck.flat())];
   const texts = await Promise.all(custom.map((id) => cardData(id).then((d) => d?.desc ?? '', () => '')));
-  return custom.filter((id, i) => isErratum(id, texts[i]));
+  const errata = new Set(custom.filter((id, i) => isErratum(id, texts[i])));
+
+  return decks
+    .map((d, i) => ({ deckId: d.id, deckTitle: d.title, cards: perDeck[i].filter((id) => errata.has(id)) }))
+    .filter((g) => g.cards.length > 0);
 }
 
 /** Errata from the deck lists (card ids + image URLs) and the intro text. Card texts load later, on the page. */
 export async function getErrata(): Promise<ErrataData> {
-  const [intro, cards] = await Promise.all([getContentText('errata.md'), errataFromDecks()]);
-  const images = Object.fromEntries(cards.map((c) => [c, cardImageUrl(c)]));
-  return { intro: intro.trim(), cards, images };
+  const [intro, groups] = await Promise.all([getContentText('errata.md'), errataByDeck()]);
+  const images = Object.fromEntries(groups.flatMap((g) => g.cards).map((c) => [c, cardImageUrl(c)]));
+  return { intro: intro.trim(), groups, images };
 }

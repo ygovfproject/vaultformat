@@ -23,7 +23,8 @@ npm run preview    # serve out/ on http://localhost:4173
 
 - **Loading screen:** on the first visit a loading screen covers the page (the header stays visible) until its content is in. When moving between pages inside the site the page changes right away, and the screen only fades in if the new page takes longer than 0.15 s to load. Once shown it stays up at least 0.3 s, so it never just flickers.
 - **What a page waits for:** only what it needs to show itself.
-  - Main page: `philosophy.md`. The hero cards start face-down and flip up once the card list and their images are in; with no decks there are no cards. The update note appears when it's loaded.
+  - Home page: `philosophy.md`. The hero cards start face-down and flip up as soon as the card list and their images are in; with no decks there are no cards. The boss row and the update note appear when they're loaded.
+  - Decks: the deck list. Each tile's tags (Ritual, Fusion, Synchro, Xyz, Link, Spellform: shown when the deck plays 3 or more such cards, or when its boss is one; plus Main engine, listed first, when the boss is a Main Deck monster) fill in as the card texts load; the tag filters appear once all are in.
   - Deck page and Errata: the deck lists. Card images load as they appear; card texts load in the background (a card opened early says "Loading card text…").
 - **File server down:** visitors land on the 500 page ("The deck slipped") with a **Try again** button that reloads the page they were on.
 - **Deck page address:** `/deck/?d=<deck_id>` (the static site can't have one page per deck, since decks are only known on the file server).
@@ -44,17 +45,21 @@ Pages with nothing to show yet say so instead of showing an empty page: Decks an
 
 ## Content formats
 
-**Main page (`content/philosophy.md`):**
+**Home page (`content/philosophy.md`):**
 
-- `# Title` and the text before the first `##`: the hero at the top
-- each `## Heading`: its own full-width section
-- `> quote`: large callout
-- `**bold**`: highlighted text
+- `# Title` and the text before the first `##`: the hero at the top; `> ...` lines there are the tagline (`<br>` breaks a line)
+- each `## Heading`: its own block, laid out by what it holds:
+  - with `### Point` headings inside: the points side by side; each gets an icon picked from words in its heading
+  - a heading with "boss" in it: the bright band with a row of 6 random decks' boss cards
+  - anything else: heading over text
+- a closing "Pick a deck" block is added after the last one
+- `**bold**`: bold, in the text colour
 
-**Rules (`content/rulings.md`):**
+**Rules (`content/rulings.md`, shown at `/rules/`):**
 
 - `# Title`, an intro, then one `## n. Section` per section (shown in the Contents list)
-- rules start with a bold number, `**2.5** ...`; any `§2.5` or `§6` in the text becomes a link to that rule or section
+- rules start with a bold number on its own, `**2.5** ...` (a title goes in its own bold: `**3.3** **The mulligan.**`); the number becomes a link to the rule, and any `§2.5` or `§6` in the text becomes a link to that rule or section
+- `Version 1.2` line: shown under the PDF button; add a date to show it there too: `Version 1.2 · 04.11.2026`
 
 **Card data (`card_texts/<card_id>.json`):** shown above the card text in the card panel.
 
@@ -63,7 +68,11 @@ Pages with nothing to show yet say so instead of showing an empty page: Decks an
 - Spells and Traps: `property` (`Normal`, `Continuous`, `Quick-Play`, ...)
 - in `desc`, a line of only dashes (`---`) is shown as a divider, e.g. between a Spellform card's spell and monster effects; errata keep their `~Vault Format erratum~` line there
 
-**Rules PDF:** the Rulings page's **Download rules** button turns `rulings.md` into a PDF in the browser, named `Vault_Format_rules_<version>.pdf` from the `Version 1.0` line. Change that line when the rules change.
+**Update notes (`content/updates/<id>.md`):** `[decks]` becomes the update's decks (small chips, each linking to the deck), `[n]` the number of them.
+
+**Deck boss (`boss` in `decks.json`, optional):** the card id of the deck's boss monster, shown in the home page's boss row. Without it the cover card (`img`) is the boss; set it when the deck plays a Vault Format erratum of the cover card.
+
+**Rules PDF:** the Rules page's **Download rules** button turns `rulings.md` into a PDF in the browser, named `Vault_Format_rules_<version>.pdf` from the `Version 1.0` line. Change that line when the rules change.
 
 **New tag and update note:** decks from the **latest** update show **New** for 30 days after its date, and the Main page shows a note about that update for the same 30 days. Neither shows while there's only one update.
 
@@ -71,12 +80,12 @@ Pages with nothing to show yet say so instead of showing an empty page: Decks an
 
 | Where | What |
 | --- | --- |
-| `src/app/` | the routes: `/`, `/decks`, `/deck`, `/errata`, `/rulings`, `/server-error` (the 500 page), 404 |
+| `src/app/` | the routes: `/`, `/decks`, `/deck`, `/errata`, `/rules`, `/updates`, `/server-error` (the 500 page), 404; `/rulings` forwards to `/rules` |
 | `src/components/pages/` | each page's loader (fetches from the file server, then renders the view) |
 | `src/components/` | views and shared pieces (`LoadingScreen`, `Decor`, `Markdown`, cards, decks) |
 | `src/lib/fileServer.ts` | all file server access |
 | `src/lib/` | content parsing: decks, updates, deck lists, errata, rules PDF |
-| `public/` | site assets only: `back.jpg` (card back), `brand/` (logo), `.nojekyll` |
+| `public/` | site assets only: `back.jpg` (card back), `brand/` (logo), `og/` (link preview images, see `scripts/og/`), `.nojekyll` |
 
 Content folders under `public/` are in `.gitignore`, so card images and texts can't end up in this repo by accident.
 
@@ -85,6 +94,6 @@ Content folders under `public/` are in `.gitignore`, so card images and texts ca
 Push to `master`. The GitHub Actions workflow in `.github/workflows/deploy.yml` builds the site and publishes it to GitHub Pages. One-time setup:
 
 - **Settings > Pages > Source**: **GitHub Actions**
-- **Settings > Secrets and variables > Actions > Variables**: add `FILE_SERVER` with the file server's public URL (the hosted admin repo)
+- **Settings > Secrets and variables > Actions > Variables**: add `FILE_SERVER` with the file server's public URL (the hosted admin repo). With a custom domain, also add `SITE_URL` (the site's full address), which link previews need; otherwise it's worked out from the GitHub Pages address.
 
 The build doesn't contact the file server, so it can't fail because the file server is down. Content changes don't need a rebuild; rebuild only when the site's code changes or `FILE_SERVER` moves.
