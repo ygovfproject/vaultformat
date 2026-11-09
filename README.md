@@ -70,7 +70,7 @@ Pages with nothing to show yet say so instead of showing an empty page: Decks an
 
 **Update notes (`content/updates/<id>.md`):** `[decks]` becomes the update's decks (small chips, each linking to the deck), `[n]` the number of them.
 
-**Deck boss (`boss` in `decks.json`, optional):** the card id of the deck's boss monster, shown in the home page's boss row. Without it the cover card (`img`) is the boss; set it when the deck plays a Vault Format erratum of the cover card.
+**Deck boss (`boss` in `decks.json`, optional):** the card id of the deck's boss monster, shown in the home page's boss row and used for the deck's tags. The boss comes only from this field: a deck without it has no boss (the cover card is not used instead).
 
 **Rules PDF:** the Rules page's **Download rules** button turns `rulings.md` into a PDF in the browser, named `Vault_Format_rules_<version>.pdf` from the `Version 1.0` line. Change that line when the rules change.
 

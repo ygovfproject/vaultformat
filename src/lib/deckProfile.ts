@@ -57,7 +57,7 @@ function kindsOf(c: CardData | null): DeckTag[] {
 }
 
 /** Tags for a deck (loads its list and card texts from the file server). */
-export async function getDeckProfile(deck: Pick<DeckJson, 'id' | 'boss' | 'img'>): Promise<DeckProfile> {
+export async function getDeckProfile(deck: Pick<DeckJson, 'id' | 'boss'>): Promise<DeckProfile> {
   const ydk = await fetchText(`decks/${deck.id}.ydk`);
   const { main, extra } = parseYdk(ydk ?? '');
   const ids = [...extra, ...main];

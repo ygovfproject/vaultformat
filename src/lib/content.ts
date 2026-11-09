@@ -11,8 +11,8 @@ export type DeckJson = {
   /** Optional square crop of the cover (set in the admin), see ./coverCrop */
   crop?: { x: number; y: number; size: number } | null;
   /**
-   * Card id of the deck's boss monster. Optional: without it the cover card (`img`) is the boss.
-   * Needed when the deck plays a Vault Format erratum of the cover card (a different id).
+   * Card id of the deck's boss monster. Optional: a deck without it has no boss (it isn't shown
+   * as one on the home page and gets no boss-based tags).
    */
   boss?: string;
 };
@@ -48,9 +48,9 @@ export function formatDate(value: string): string {
   return `${Number(m[1])} ${MONTHS[Number(m[2]) - 1]} ${m[3]}`;
 }
 
-/** The deck's boss monster card id: `boss` if set, else the cover card. Null if neither is a card id. */
-export function bossCardId(deck: Pick<DeckJson, 'boss' | 'img'>): string | null {
-  const id = String(deck.boss ?? deck.img ?? '').trim();
+/** The deck's boss monster card id, from its `boss` field only. Null if it's missing or not a card id. */
+export function bossCardId(deck: Pick<DeckJson, 'boss'>): string | null {
+  const id = String(deck.boss ?? '').trim();
   return /^\d+$/.test(id) ? String(Number(id)) : null;
 }
 
