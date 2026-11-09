@@ -121,6 +121,9 @@ export default function Hero({
                 width: { xs: 470 * PHONE_SCALE, md: 470 },
                 height: { xs: 480 * PHONE_SCALE, md: 480 },
                 mr: { md: 5 },
+                // Desktop: sits a little below the text's centre line
+                position: "relative",
+                top: { md: 40 },
                 "& > *": { transform: { xs: `scale(${PHONE_SCALE})`, md: "none" }, transformOrigin: "top left" },
               }}
             >
