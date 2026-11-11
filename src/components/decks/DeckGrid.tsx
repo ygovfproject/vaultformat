@@ -29,6 +29,41 @@ const TILE_STAGGER_MS = 40;
 /** The 13th tile on comes in with the 12th, so a long list doesn't keep the last ones waiting. */
 const TILE_STAGGER_MAX = 12;
 
+/** Skeleton shimmer while the deck tags load (their card texts come in after the page). */
+const shimmer = keyframes`
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+`;
+const skeleton = {
+  display: 'inline-block',
+  verticalAlign: 'middle',
+  background: 'linear-gradient(90deg, rgba(232,238,247,0.08) 25%, rgba(232,238,247,0.2) 50%, rgba(232,238,247,0.08) 75%)',
+  backgroundSize: '200% 100%',
+  animation: `${shimmer} 1.4s linear infinite`,
+  '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+} as const;
+
+/** Placeholder for a tile's tag line: two short bars. */
+function TagLineSkeleton() {
+  return (
+    <Box component="span" aria-hidden sx={{ display: 'inline-flex', gap: 1, verticalAlign: 'middle' }}>
+      <Box component="span" sx={{ ...skeleton, width: 64, height: '0.8em' }} />
+      <Box component="span" sx={{ ...skeleton, width: 44, height: '0.8em' }} />
+    </Box>
+  );
+}
+
+/** Placeholder for the tag filter row: a few button-sized blocks. */
+function TagFilterSkeleton() {
+  return (
+    <Box aria-hidden sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+      {[132, 92, 92, 104, 72, 72].map((w, i) => (
+        <Box key={i} sx={{ ...skeleton, width: w, height: 32 }} />
+      ))}
+    </Box>
+  );
+}
+
 /** Shown when a deck has no cover image. */
 function CoverFallback() {
   return (
@@ -57,7 +92,8 @@ function useDeckProfiles(decks: Deck[]) {
     for (const deck of decks) {
       getDeckProfile(deck).then(
         (p) => alive && setProfiles((all) => ({ ...all, [deck.id]: p })),
-        () => {},
+        // Couldn't work them out: no tags, rather than a skeleton that never goes away
+        () => alive && setProfiles((all) => ({ ...all, [deck.id]: { tags: [] } })),
       );
     }
     return () => {
@@ -151,6 +187,7 @@ function DeckTile({ deck, profile, now, position }: { deck: Deck; profile?: Deck
               px: 1,
               py: 0.25,
               bgcolor: dmf.orange,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
               fontFamily: fonts.display,
               fontWeight: 700,
               fontSize: size.small,
@@ -184,6 +221,7 @@ function DeckTile({ deck, profile, now, position }: { deck: Deck; profile?: Deck
             sx={{ mt: 0.5, minHeight: '1.4em', fontFamily: fonts.display, fontWeight: 600, fontSize: size.small, lineHeight: 1.4, color: dmf.ice }}
           >
             {/* Each tag stays whole: a narrow tile wraps between tags, never inside one or after a dot */}
+            {!profile && <TagLineSkeleton />}
             {profile?.tags.map((t, i) => (
               <Fragment key={t}>
                 {i > 0 && ' '}
@@ -323,7 +361,7 @@ export default function DeckGrid({ decks }: { decks: Deck[] }) {
         </ToggleButtonGroup>
       </Box>
       {/* Its space is kept while the tags load, so the grid doesn't jump down */}
-      <Box sx={{ minHeight: 40, mb: 5 }}>{profilesReady && <TagFilter counts={counts} selected={tags} onToggle={toggleTag} />}</Box>
+      <Box sx={{ minHeight: 40, mb: 5 }}>{profilesReady ? <TagFilter counts={counts} selected={tags} onToggle={toggleTag} /> : <TagFilterSkeleton />}</Box>
 
       {visible.length === 0 ? (
         <Box role="status" sx={{ py: 6 }}>
