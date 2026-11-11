@@ -173,22 +173,12 @@ export function FlipFan({ cards }: { cards: string[] }) {
     return fallback;
   };
 
-  /** Load a new card (trying a few if some fail); null if none loaded. */
-  /**
-   * Load a new card: only monsters (a Spell or Trap's empty text box looks unfinished in the fan),
-   * trying a few if some fail; null if none loaded.
-   */
+  /** Load a new card (any card in the pool), trying a few if some fail; null if none loaded. */
   const loadNext = async (fallback: string): Promise<string | null> => {
     let failed = 0;
     for (let tries = 0; tries < 30 && failed < 3 && cards.length > 0; tries++) {
       const incoming = pickIncoming(fallback);
       pending.current.add(incoming);
-      const id = cardIdOf(incoming);
-      const data = id ? await cardData(id).catch(() => null) : null;
-      if (data && data.type !== 'Monster' && !data.typeline?.length) {
-        pending.current.delete(incoming);
-        continue; // a Spell or Trap: skip it
-      }
       const ok = await loadImage(incoming);
       pending.current.delete(incoming);
       if (ok) return incoming;
